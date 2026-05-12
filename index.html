@@ -278,6 +278,8 @@ td.warn { color: var(--yellow); }
   <li><span class="label">Vision</span>Jack's "AI agent as service" vision codified — 90% automated infrastructure, humans pinged only at high-judgment moments.</li>
   <li><span class="label">Tension</span>"Service vs VC-backable" surfaced as central strategic question.</li>
   <li><span class="label">Reality</span>"We eat blame regardless" — even when client makes the call (Aakash insisting on copy we pushed back on).</li>
+  <li><span class="label">Hours</span>Corrected: ~20-30h compressed into 3 days (not 30-60h over 5 weeks). Effective rate <strong>$67-100/hr</strong>, not $33-67/hr. Materially better economics than earlier draft framed.</li>
+  <li><span class="label">Automation</span>Per-stage % re-assessed based on standup discussion. Stage 6 (signal research) drops if AISDR tools beat our pipeline. Stage 9 (client iteration) has a viable mechanization path via Slack bot. Stage 19 (reply handling) has UX limits — clients hate "AI-responding-to-AI".</li>
 </ul>
 </div>
 </section>
@@ -291,7 +293,7 @@ td.warn { color: var(--yellow); }
   <li><strong>The central question shifts:</strong> not "can we sell outbound as a service?" but "can we sell it with the <em>discipline</em> to refuse yes-man mode?" Cardinal does this at $2K × 30 clients. We're not there yet.</li>
   <li><strong>2 of our own campaigns auto-paused for bounces</strong> in early May. Even with internal QA, deliverability isn't solved.</li>
   <li><strong>The April 21 audit caught 38 already-shipped emails with material errors</strong> (24 spintax leaks, 14 cert-as-firstname). Internal QA framework was BUILT in response.</li>
-  <li><strong>Phillip-hours estimate on InspectMind: 30-60 hours</strong> over 5 weeks for $2K revenue. ~$33-67/hour effective rate. Service-economics, not SaaS-economics — yet.</li>
+  <li><strong>Phillip-hours on InspectMind: ~20-30 hours</strong> compressed into ~3 days of intensive work for $2K revenue. <strong>~$67-100/hour effective rate.</strong> Closer to break-even agency than the earlier "$33-67/hour over 5 weeks" framing. Still not SaaS economics, but the leverage is real.</li>
   <li><strong>Stage 9 (client copy iteration) cannot be automated</strong> in its current form. Aakash had 5-6 explicit contradictions across feedback rounds. AI can't predict what a founder will object to in round 4 vs round 2 — they themselves don't know.</li>
   <li><strong>~70% of the 20 stages ARE automatable.</strong> But "automatable" ≠ "valuable" — Apollo + Instantly + Claude already do most of it commodity-style.</li>
   <li><strong>Personalization isn't always required</strong> (Mudit's counter-thesis). Templated emails run the industry. For acute-pain B2B, generic outperforms vague-personal. Reconsider where we spend personalization budget.</li>
@@ -316,13 +318,13 @@ td.warn { color: var(--yellow); }
   <div class="stat"><div class="v">2</div><div class="l">campaigns auto-paused for bounces (May 1-2)</div></div>
   <div class="stat"><div class="v">3,870</div><div class="l">InspectMind leads</div></div>
   <div class="stat"><div class="v">8,635</div><div class="l">InspectMind total sends planned</div></div>
-  <div class="stat"><div class="v">~30-60h</div><div class="l">Phillip-hours on InspectMind (5 weeks)</div></div>
-  <div class="stat warn"><div class="v">$33-67</div><div class="l">/hour effective rate</div></div>
+  <div class="stat"><div class="v">~20-30h</div><div class="l">Phillip-hours on InspectMind (3 intense days)</div></div>
+  <div class="stat good"><div class="v">$67-100</div><div class="l">/hour effective rate (revised)</div></div>
 </div>
 
 <div class="callout">
 <h5>The number that matters most</h5>
-<p><strong>$2,000 revenue ÷ ~45 Phillip-hours ≈ $44/hour.</strong> That's service-business economics, not SaaS economics. If we want venture-backable, we need to either dramatically compress the hours (mechanize Stage 9) or dramatically raise the price ($10K+ retainers with the discipline to earn them).</p>
+<p><strong>$2,000 revenue ÷ ~25 Phillip-hours ≈ $80/hour.</strong> Revised after Phillip clarified: the engagement compressed into 3 days of intensive work, not 5 weeks of distributed effort. $80/hour is decent agency-rate. To become VC-backable we still need to mechanize Stage 9 (or raise to $5K+ retainers), but the unit economics aren't as bleak as the earlier "$44/hour" framing implied.</p>
 <p>The other number that matters: <strong>0.28% reply rate</strong> on our own outbound. Top decile of cold outbound is 1-3%. We're bottom decile. Cardinal benchmark: $2K × 30 clients works because they're top-decile, not because they price low.</p>
 </div>
 </section>
@@ -438,9 +440,9 @@ td.warn { color: var(--yellow); }
 <tr><td>Revenue from Aakash</td><td class="num good">+$2,000</td></tr>
 <tr><td>Skylarq infra (allocated, ~5 weeks)</td><td class="num">−$400</td></tr>
 <tr><td>Enrichment costs (est. EXA + Findymail for 3,870 leads)</td><td class="num">−$400-1,100</td></tr>
-<tr><td>Phillip hours (~45h × $0 not paid) at imputed $100/h</td><td class="num bad">−$4,500</td></tr>
-<tr><td>Akash hours (~10h imputed)</td><td class="num">−$1,000</td></tr>
-<tr><th>Imputed margin (loss)</th><th class="num bad">−$3,900 to −$4,500</th></tr>
+<tr><td>Phillip hours (~25h actual) at imputed $100/h</td><td class="num warn">−$2,500</td></tr>
+<tr><td>Akash hours (~5-8h imputed)</td><td class="num">−$500-800</td></tr>
+<tr><th>Imputed margin</th><th class="num warn">−$1,400 to −$2,300</th></tr>
 </tbody>
 </table>
 
@@ -554,7 +556,7 @@ td.warn { color: var(--yellow); }
 <tr><td>Expected upload conversion</td><td>Unknown — needs Aakash's PostHog data post-campaign</td></tr>
 <tr><td>Aakash's ACV per project</td><td>$50/project. Need 10-20 paid uploads attributable to ULISpring to make his $2K pencil at his pricing.</td></tr>
 <tr><td>Will Aakash come back for next conference?</td><td><strong>The success metric.</strong> Jack hypothesis: no (this was residue of existing engagement). Phillip hypothesis: yes (he's already proposed separate cold outbound).</td></tr>
-<tr><td>Phillip hours</td><td>Ballpark 30-60 over 5 weeks (no formal tracking)</td></tr>
+<tr><td>Phillip hours</td><td>~20-30 hours compressed into 3 days of intensive work (May 10-12)</td></tr>
 <tr><td>Stage 9 hours specifically</td><td>~15-25 of those hours — the bottleneck</td></tr>
 </tbody>
 </table>
@@ -579,7 +581,7 @@ If conversion = 0.1% (matching Skylarq's reply rate floor) = 3.87 paid → ~$1.8
 
 <div class="stage">
 <div class="stage-header" onclick="this.parentElement.classList.toggle('open')">
-  <span class="badge">01</span><span class="title">Client intake / scoping call</span><span class="time">2-4h</span><span class="auto auto-no">❌ Not automatable</span>
+  <span class="badge">01</span><span class="title">Client intake / scoping call</span><span class="time">1-2h</span><span class="auto auto-no">❌ Not automatable</span>
 </div>
 <div class="stage-body">
   <p><strong>InspectMind:</strong> Aakash reached out via Slack. 30-60 min discovery via Zoom + Slack threads over 1-2 weeks.</p>
@@ -590,7 +592,7 @@ If conversion = 0.1% (matching Skylarq's reply rate floor) = 3.87 paid → ~$1.8
 
 <div class="stage">
 <div class="stage-header" onclick="this.parentElement.classList.toggle('open')">
-  <span class="badge">02</span><span class="title">ICP definition</span><span class="time">2-4h</span><span class="auto auto-partial">⚠️ 30%</span>
+  <span class="badge">02</span><span class="title">ICP definition</span><span class="time">1-2h</span><span class="auto auto-partial">⚠️ 30%</span>
 </div>
 <div class="stage-body">
   <p><strong>InspectMind:</strong> Aakash mid-engagement said <em>"actually send to the non-ICP ones too — worst case more awareness"</em> — a budget call AI can't make.</p>
@@ -600,7 +602,7 @@ If conversion = 0.1% (matching Skylarq's reply rate floor) = 3.87 paid → ~$1.8
 
 <div class="stage">
 <div class="stage-header" onclick="this.parentElement.classList.toggle('open')">
-  <span class="badge">03</span><span class="title">Lead sourcing — the manual reality</span><span class="time">8-12h</span><span class="auto auto-partial">⚠️ 30%</span>
+  <span class="badge">03</span><span class="title">Lead sourcing — the manual reality</span><span class="time">5-7h</span><span class="auto auto-partial">⚠️ 30%</span>
 </div>
 <div class="stage-body">
   <p><strong>InspectMind:</strong> Phillip manually scraped ULI Spring 2026 conference website page by page. No clean API.</p>
@@ -629,10 +631,14 @@ If conversion = 0.1% (matching Skylarq's reply rate floor) = 3.87 paid → ~$1.8
 
 <div class="stage">
 <div class="stage-header" onclick="this.parentElement.classList.toggle('open')">
-  <span class="badge">06</span><span class="title">Signal/news research per lead</span><span class="time">4-8h</span><span class="auto auto-partial">⚠️ 60%</span>
+  <span class="badge">06</span><span class="title">Signal/news research per lead</span><span class="time">3-4h</span><span class="auto auto-partial">⚠️ 60%</span>
 </div>
 <div class="stage-body">
-  <p><strong>InspectMind:</strong> Tier 1 hand-curated; Tier 2 firm-news from EXA; Tier 3 cascade. 2 hallucination bugs caught by Aakash (Lifestyle Communities' 37 truncation; NBA abbreviation).</p>
+  <p><strong>InspectMind:</strong> Tier 1 hand-curated; Tier 2 firm-news from EXA; Tier 3 cascade. 2 hallucination bugs caught by Aakash.</p>
+  <div class="callout">
+    <h5>Standup automation reassessment</h5>
+    <p>Mudit's suggestion: run AISDR tools (Outboundly, Apollo AI, Smartwriter) against Jack's custom pipeline as A/B test. If commercial AISDRs match our quality, we can shift Stage 6 from <strong>60% → 80%+ automated</strong> by integrating them rather than maintaining our own personalization codebase. Result: 2-week eval planned, blocking other R&D.</p>
+  </div>
   <div class="callout">
     <h5>Mudit's counter-thesis (May 12 standup)</h5>
     <p><strong>Personalization isn't always required.</strong> Templated emails have run the industry forever. For acute-pain B2B ("cure for cancer" example), generic outperforms vague-personal. Web search isn't always required either.</p>
@@ -656,7 +662,7 @@ If conversion = 0.1% (matching Skylarq's reply rate floor) = 3.87 paid → ~$1.8
 
 <div class="stage">
 <div class="stage-header" onclick="this.parentElement.classList.toggle('open')">
-  <span class="badge">08</span><span class="title">Initial copy draft (v1)</span><span class="time">3-5h</span><span class="auto auto-partial">⚠️ 50%</span>
+  <span class="badge">08</span><span class="title">Initial copy draft (v1)</span><span class="time">2-3h</span><span class="auto auto-partial">⚠️ 50%</span>
 </div>
 <div class="stage-body">
   <p>Phillip drafts in Claude with reps + intuition. AI assists but doesn't replace.</p>
@@ -666,10 +672,10 @@ If conversion = 0.1% (matching Skylarq's reply rate floor) = 3.87 paid → ~$1.8
 
 <div class="stage open">
 <div class="stage-header" onclick="this.parentElement.classList.toggle('open')">
-  <span class="badge">09</span><span class="title">Client feedback loop on copy ★ THE BIG BOTTLENECK</span><span class="time">15-25h</span><span class="auto auto-no">❌ 0-5%</span>
+  <span class="badge">09</span><span class="title">Client feedback loop on copy ★ THE BIG BOTTLENECK</span><span class="time">8-12h</span><span class="auto auto-no">❌ 0-5%</span>
 </div>
 <div class="stage-body">
-  <p><strong>InspectMind:</strong> 4 formal rounds with Aakash over ~5 days in early May. v3 → v8/v9 → v10 → v11 → v12. Plus 2 small tweaks post-launch.</p>
+  <p><strong>InspectMind:</strong> 4 formal rounds with Aakash over May 10-12 (compressed 3 days). v3 → v8/v9 → v10 → v11 → v12. Plus 2 small tweaks post-launch.</p>
 
   <h4>Why AI cannot replicate this (yet)</h4>
   <p>Aakash had <strong>5-6 explicit contradictions across feedback rounds</strong>:</p>
@@ -681,9 +687,10 @@ If conversion = 0.1% (matching Skylarq's reply rate floor) = 3.87 paid → ~$1.8
   <p>AI cannot predict round 4 from round 2 because the client themselves doesn't know what they want until they see what they don't want.</p>
 
   <div class="callout real">
-    <h5>Jack's standup suggestion — Slack bot for client response</h5>
+    <h5>Jack's standup suggestion — Slack bot for client response (revised path to 30-50% automation)</h5>
     <p><em>"If he's using AI to judge all of the fucking emails, why can't we use AI to respond? Maybe we can just set up a Slack bot in there as well."</em></p>
-    <p>Worth experimenting. If a Slack bot can handle 60-80% of client copy iteration (the back-and-forth, version control, "here's what I think you meant" interpretation), Stage 9 hours drop from 15-25h to 5-10h per engagement. That's the leverage moment.</p>
+    <p><strong>Revised automation potential:</strong> Stage 9 today is ~0% automated. With a Slack bot handling structured version-diff + objection-classification + draft-response, we can realistically push to <strong>30-50% automated within 2-3 client engagements</strong>. The remaining 50% (judgment calls when client contradicts themselves across rounds) stays human.</p>
+    <p>If we hit 50% mechanization, total Phillip-hours per engagement drops from ~25h to ~17-20h. Combined with $5K retainer pricing, that's $250-300/hr effective rate. Real economics.</p>
   </div>
 
   <div class="callout">
@@ -796,6 +803,11 @@ If conversion = 0.1% (matching Skylarq's reply rate floor) = 3.87 paid → ~$1.8
 <div class="stage-body">
   <p>Classifier auto-categorizes (Interested / OOO / Unsubscribe / Spam complaint / Question). Stop-on-reply removes from sequence.</p>
   <div class="callout">
+    <h5>Standup — UX limit on Stage 19 automation</h5>
+    <p>Phillip in standup: <em>"His Open Claude responded to me at 3am his time. If I'm the client and a service provider is using OpenClient to respond to me, I'd kinda be pissed too. Like, why am I paying for this shit?"</em></p>
+    <p>Implication: there's a hard ceiling on how much of reply-handling we can automate before clients feel cheated. Sweet spot: <strong>auto-classify + auto-draft + human reviews before send for "Interested" replies</strong>. ~40% time savings without the UX cost.</p>
+  </div>
+  <div class="callout">
     <h5>NEW — TAM exhaustion constraint (Mudit, standup)</h5>
     <p>Once you email a lead, you can't re-email for ~1 month (deliverability + recipient annoyance). Aggressive clients (Vishal-type, wanting unlimited emails) exhaust their reachable universe quickly.</p>
     <p><strong>Pricing implication:</strong> per-email-inbox pricing creates a natural cap. "5K mailboxes × 30 emails/day × 22 business days = ~3.3M emails/month theoretical max" — but in practice, the ICP is far smaller. Pricing must reflect the actual TAM, not aspirational volumes.</p>
@@ -812,7 +824,7 @@ If conversion = 0.1% (matching Skylarq's reply rate floor) = 3.87 paid → ~$1.8
 </div>
 </div>
 
-<p style="margin-top: 32px; color: var(--text-2); font-size: 14px;"><strong>Total estimated Phillip-hours per InspectMind-like engagement: ~45-60h.</strong> Stage 9 alone is 35-45% of that. Mechanizing Stage 9 (Jack's Slack-bot hypothesis) would unlock the biggest leverage.</p>
+<p style="margin-top: 32px; color: var(--text-2); font-size: 14px;"><strong>Total actual Phillip-hours on InspectMind: ~20-30h compressed into 3 days.</strong> Per-stage estimates above were the "what a sane allocation would look like" — actual was tighter because intense focus + parallel work compressed multi-stage hours. Stage 9 alone was likely 30-40% of total (8-12h). Mechanizing Stage 9 (Jack's Slack-bot hypothesis) would still unlock the biggest single leverage.</p>
 </section>
 
 <section id="matrix">
@@ -820,15 +832,15 @@ If conversion = 0.1% (matching Skylarq's reply rate floor) = 3.87 paid → ~$1.8
 <table>
 <thead><tr><th>#</th><th>Stage</th><th>AI one-shot?</th><th class="num">Hours</th><th class="num">Human %</th></tr></thead>
 <tbody>
-<tr><td>01</td><td>Intake call</td><td>❌ No</td><td class="num">2-4</td><td class="num">100%</td></tr>
-<tr><td>02</td><td>ICP definition</td><td>⚠️ Partial</td><td class="num">2-4</td><td class="num">60%</td></tr>
-<tr><td>03</td><td>Lead sourcing</td><td>⚠️ Partial</td><td class="num">8-12</td><td class="num">70%</td></tr>
+<tr><td>01</td><td>Intake call</td><td>❌ No</td><td class="num">1-2</td><td class="num">100%</td></tr>
+<tr><td>02</td><td>ICP definition</td><td>⚠️ Partial</td><td class="num">1-2</td><td class="num">60%</td></tr>
+<tr><td>03</td><td>Lead sourcing</td><td>⚠️ Partial</td><td class="num">5-7</td><td class="num">70%</td></tr>
 <tr><td>04</td><td>Enrichment</td><td>✅ Yes</td><td class="num">1-2</td><td class="num">10%</td></tr>
 <tr><td>05</td><td>ICP filtering</td><td>⚠️ Partial</td><td class="num">2-3</td><td class="num">30%</td></tr>
-<tr><td>06</td><td>Signal research</td><td>⚠️ Partial</td><td class="num">4-8</td><td class="num">40%</td></tr>
+<tr><td>06</td><td>Signal research</td><td>⚠️ Partial</td><td class="num">3-4</td><td class="num">30% (20% w/ AISDR)</td></tr>
 <tr><td>07</td><td>Tier + cadence</td><td>✅ Yes</td><td class="num">0.5</td><td class="num">0%</td></tr>
-<tr><td>08</td><td>Initial copy</td><td>⚠️ Partial</td><td class="num">3-5</td><td class="num">50%</td></tr>
-<tr><td>09</td><td><strong>Client iteration ★</strong></td><td>❌ <strong>No</strong></td><td class="num bad"><strong>15-25</strong></td><td class="num"><strong>100%</strong></td></tr>
+<tr><td>08</td><td>Initial copy</td><td>⚠️ Partial</td><td class="num">2-3</td><td class="num">50%</td></tr>
+<tr><td>09</td><td><strong>Client iteration ★</strong></td><td>❌ <strong>No</strong></td><td class="num bad"><strong>8-12</strong></td><td class="num"><strong>100% now / 50-70% if Slack bot ships</strong></td></tr>
 <tr><td>10</td><td>Personalization QA</td><td>⚠️ Partial</td><td class="num">2-3</td><td class="num">30%</td></tr>
 <tr><td>11</td><td>UTM/URLs</td><td>✅ Yes</td><td class="num">0.5</td><td class="num">0%</td></tr>
 <tr><td>12</td><td>Infrastructure</td><td>⚠️ Partial</td><td class="num">0 / 6wk new</td><td class="num">30%</td></tr>
@@ -838,9 +850,9 @@ If conversion = 0.1% (matching Skylarq's reply rate floor) = 3.87 paid → ~$1.8
 <tr><td>16</td><td>Pre-launch hotfix</td><td>⚠️ Partial</td><td class="num">2-3</td><td class="num">50%</td></tr>
 <tr><td>17</td><td>Activation</td><td>✅ Yes</td><td class="num">0.25</td><td class="num">0%</td></tr>
 <tr><td>18</td><td>Monitoring</td><td>⚠️ Partial</td><td class="num">1-3/wk</td><td class="num">40%</td></tr>
-<tr><td>19</td><td>Reply handling</td><td>⚠️ Partial</td><td class="num">0.5/wk</td><td class="num">70%</td></tr>
+<tr><td>19</td><td>Reply handling</td><td>⚠️ Partial</td><td class="num">0.5/wk</td><td class="num">60% (UX-capped)</td></tr>
 <tr><td>20</td><td>Post-analysis</td><td>⚠️ Partial</td><td class="num">2-4</td><td class="num">40%</td></tr>
-<tr><th>Total</th><th></th><th></th><th class="num"><strong>45-60h</strong></th><th></th></tr>
+<tr><th>Total</th><th></th><th></th><th class="num"><strong>20-30h</strong></th><th></th></tr>
 </tbody>
 </table>
 </section>
