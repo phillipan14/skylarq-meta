@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Internal</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0a0a0b; --bg-2: #131316; --bg-3: #1a1a1f; --border: #2a2a31;
+  --text: #e8e8ea; --text-2: #a0a0a8; --text-3: #6b6b75;
+  --accent: #e3a86c; --accent-2: #d97757;
+  --green: #5fb878; --yellow: #d4a843; --red: #d05e5e; --blue: #6ba8d4;
+}
+html { scroll-behavior: smooth; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; font-size: 15px; }
+.layout { display: grid; grid-template-columns: 280px 1fr; min-height: 100vh; }
+nav { background: var(--bg-2); border-right: 1px solid var(--border); padding: 32px 24px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+nav .logo { font-weight: 700; font-size: 16px; color: var(--accent); margin-bottom: 4px; letter-spacing: -0.02em; }
+nav .sublogo { font-size: 12px; color: var(--text-3); margin-bottom: 28px; }
+nav ul { list-style: none; }
+nav li { margin-bottom: 4px; }
+nav a { color: var(--text-2); text-decoration: none; display: block; padding: 6px 8px; border-radius: 4px; font-size: 13px; transition: all 0.15s; }
+nav a:hover { background: var(--bg-3); color: var(--text); }
+nav a.section-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-3); margin-top: 20px; padding: 4px 8px; pointer-events: none; }
+main { padding: 64px 80px; max-width: 1100px; }
+h1 { font-size: 42px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; margin-bottom: 8px; }
+h1 .sub { display: block; font-size: 16px; font-weight: 500; color: var(--text-2); margin-top: 12px; letter-spacing: 0; }
+h2 { font-size: 30px; font-weight: 700; letter-spacing: -0.02em; margin: 80px 0 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+h2 .num { color: var(--accent); margin-right: 12px; font-weight: 600; }
+h3 { font-size: 22px; font-weight: 700; margin: 48px 0 16px; letter-spacing: -0.01em; }
+h4 { font-size: 16px; font-weight: 700; margin: 24px 0 12px; }
+p { margin-bottom: 16px; }
+ul.std, ol.std { margin: 12px 0 20px 28px; }
+ul.std li, ol.std li { margin-bottom: 8px; }
+strong { color: #fff; font-weight: 600; }
+em { color: var(--accent); font-style: normal; font-weight: 500; }
+code { background: var(--bg-3); color: var(--accent); padding: 2px 6px; border-radius: 3px; font-family: "JetBrains Mono", "Menlo", monospace; font-size: 13px; }
+pre { background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; padding: 20px; overflow-x: auto; margin: 16px 0 24px; font-family: "JetBrains Mono", "Menlo", monospace; font-size: 13px; line-height: 1.6; }
+pre code { background: none; padding: 0; color: var(--text); }
+.hero { margin-bottom: 48px; }
+.version-tag { display: inline-block; background: var(--bg-3); color: var(--accent); padding: 4px 10px; border-radius: 12px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; margin-bottom: 16px; }
+.hero p.lede { font-size: 18px; color: var(--text-2); margin-top: 24px; max-width: 720px; }
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 32px 0 48px; }
+.stat { background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
+.stat .v { font-size: 28px; font-weight: 800; color: var(--accent); letter-spacing: -0.02em; }
+.stat .l { font-size: 12px; color: var(--text-3); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+.stat.bad .v { color: var(--red); }
+.stat.good .v { color: var(--green); }
+
+.tldr { background: var(--bg-2); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 8px; padding: 24px 28px; margin-bottom: 32px; }
+.tldr h4 { margin-top: 0; text-transform: uppercase; font-size: 11px; letter-spacing: 0.1em; color: var(--accent); }
+.tldr ul { margin-left: 20px; }
+.tldr li { margin-bottom: 8px; }
+
+.stage { background: var(--bg-2); border: 1px solid var(--border); border-radius: 12px; margin: 24px 0; overflow: hidden; }
+.stage-header { padding: 20px 28px; display: flex; align-items: center; gap: 16px; cursor: pointer; user-select: none; border-bottom: 1px solid var(--border); transition: background 0.15s; }
+.stage-header:hover { background: var(--bg-3); }
+.stage-header .badge { background: var(--bg-3); color: var(--accent); font-weight: 700; padding: 4px 10px; border-radius: 4px; font-size: 12px; letter-spacing: 0.04em; flex-shrink: 0; }
+.stage-header .title { flex: 1; font-weight: 600; font-size: 16px; }
+.stage-header .auto { font-size: 12px; padding: 3px 10px; border-radius: 12px; font-weight: 600; flex-shrink: 0; }
+.stage-header .time { font-size: 11px; padding: 3px 10px; border-radius: 12px; font-weight: 600; flex-shrink: 0; background: rgba(107,168,212,0.15); color: var(--blue); border: 1px solid rgba(107,168,212,0.3); }
+.auto-yes { background: rgba(95,184,120,0.15); color: var(--green); border: 1px solid rgba(95,184,120,0.3); }
+.auto-partial { background: rgba(212,168,67,0.15); color: var(--yellow); border: 1px solid rgba(212,168,67,0.3); }
+.auto-no { background: rgba(208,94,94,0.15); color: var(--red); border: 1px solid rgba(208,94,94,0.3); }
+
+.stage-body { padding: 24px 28px; display: none; }
+.stage.open .stage-body { display: block; }
+.stage.open .stage-header .badge::after { content: " ▾"; }
+.stage:not(.open) .stage-header .badge::after { content: " ▸"; }
+
+.meta-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 12px 0 20px; }
+.meta-item { background: var(--bg-3); border-radius: 6px; padding: 12px 14px; }
+.meta-item .label { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+.meta-item .val { font-size: 13px; }
+
+.callout { background: rgba(208,94,94,0.08); border-left: 3px solid var(--red); padding: 16px 20px; border-radius: 6px; margin: 20px 0; }
+.callout.win { background: rgba(95,184,120,0.08); border-left-color: var(--green); }
+.callout.info { background: rgba(107,168,212,0.08); border-left-color: var(--blue); }
+.callout.real { background: rgba(227,168,108,0.08); border-left-color: var(--accent); }
+.callout h5 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; color: var(--red); }
+.callout.win h5 { color: var(--green); }
+.callout.info h5 { color: var(--blue); }
+.callout.real h5 { color: var(--accent); }
+
+table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 13px; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+th { background: var(--bg-3); color: var(--text-2); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
+tr:hover td { background: var(--bg-2); }
+td.num { text-align: right; font-family: "JetBrains Mono", monospace; }
+td.good { color: var(--green); }
+td.bad { color: var(--red); }
+td.warn { color: var(--yellow); }
+
+.tabs { display: flex; gap: 4px; margin: 24px 0 16px; border-bottom: 1px solid var(--border); }
+.tab { background: none; border: none; color: var(--text-2); padding: 10px 18px; cursor: pointer; font-size: 14px; font-family: inherit; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab:hover { color: var(--text); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+.email-card { background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; margin: 16px 0; overflow: hidden; }
+.email-header { padding: 12px 18px; background: var(--bg-3); border-bottom: 1px solid var(--border); font-size: 12px; color: var(--text-2); }
+.email-header .subject { color: var(--text); font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.email-body { padding: 20px 24px; white-space: pre-wrap; font-size: 14px; line-height: 1.7; font-family: "Charter", "Georgia", serif; }
+
+.timeline { position: relative; padding-left: 32px; margin: 32px 0; }
+.timeline::before { content: ""; position: absolute; left: 8px; top: 8px; bottom: 8px; width: 2px; background: var(--border); }
+.timeline-item { position: relative; padding-bottom: 24px; }
+.timeline-item::before { content: ""; position: absolute; left: -28px; top: 6px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px var(--bg); }
+.timeline-item .when { font-size: 12px; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+
+.wedge { background: var(--bg-2); border: 1px solid var(--border); border-radius: 12px; padding: 28px; margin: 16px 0; }
+.wedge.recommended { border-color: var(--accent); box-shadow: 0 0 0 1px rgba(227,168,108,0.2); }
+.wedge.risky { border-color: rgba(208,94,94,0.4); }
+.wedge h3 { margin-top: 0; }
+.wedge .tag { display: inline-block; background: rgba(227,168,108,0.15); color: var(--accent); padding: 3px 10px; border-radius: 12px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; margin-bottom: 12px; }
+.wedge.risky .tag { background: rgba(208,94,94,0.15); color: var(--red); }
+.wedge .pay-test { background: var(--bg-3); padding: 16px; border-radius: 6px; margin: 16px 0; font-size: 13px; }
+.wedge .pay-test h5 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin-bottom: 8px; }
+
+.pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+.pros-cons > div { background: var(--bg-3); padding: 16px; border-radius: 6px; }
+.pros-cons h5 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+.pros h5 { color: var(--green); }
+.cons h5 { color: var(--red); }
+.pros-cons ul { list-style: none; font-size: 13px; }
+.pros-cons li { padding-left: 16px; position: relative; margin-bottom: 6px; }
+.pros li::before { content: "+"; color: var(--green); position: absolute; left: 0; font-weight: 700; }
+.cons li::before { content: "−"; color: var(--red); position: absolute; left: 0; font-weight: 700; }
+
+.dont-list { background: rgba(208,94,94,0.05); border: 1px solid rgba(208,94,94,0.2); border-radius: 8px; padding: 24px; margin: 20px 0; }
+.dont-list h4 { color: var(--red); margin-top: 0; }
+.dont-list ol { margin-left: 24px; }
+.dont-list li { margin-bottom: 12px; }
+
+.controls { display: flex; gap: 8px; margin: 20px 0; }
+.controls button { background: var(--bg-3); color: var(--text); border: 1px solid var(--border); padding: 8px 14px; border-radius: 4px; font-size: 12px; cursor: pointer; font-family: inherit; }
+.controls button:hover { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+
+.cost-card { background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin: 12px 0; display: grid; grid-template-columns: 1fr auto auto; gap: 16px; align-items: center; }
+.cost-card .name { font-weight: 600; }
+.cost-card .role { font-size: 12px; color: var(--text-3); }
+.cost-card .price { font-family: "JetBrains Mono", monospace; color: var(--accent); font-weight: 600; }
+.cost-card .source { font-size: 11px; color: var(--text-3); }
+.cost-card.confirmed { border-left: 3px solid var(--green); }
+.cost-card.estimated { border-left: 3px solid var(--yellow); }
+.cost-card.unknown { border-left: 3px solid var(--red); }
+
+.changelog { background: var(--bg-2); border: 1px solid var(--accent); border-left-width: 3px; border-radius: 8px; padding: 24px 28px; margin: 32px 0; }
+.changelog h4 { color: var(--accent); margin-top: 0; text-transform: uppercase; font-size: 11px; letter-spacing: 0.1em; }
+.changelog ul { list-style: none; margin: 0; }
+.changelog li { padding: 8px 0; border-bottom: 1px dashed var(--border); font-size: 13px; }
+.changelog li:last-child { border-bottom: none; }
+.changelog .label { display: inline-block; min-width: 70px; font-weight: 600; color: var(--accent); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; margin-right: 12px; }
+
+.tree { background: var(--bg-2); border: 1px solid var(--border); border-radius: 12px; padding: 28px; margin: 20px 0; }
+.tree-branch { padding: 16px 20px; margin: 12px 0; border-radius: 8px; border-left: 3px solid var(--border); background: var(--bg-3); }
+.tree-branch.green { border-left-color: var(--green); }
+.tree-branch.yellow { border-left-color: var(--yellow); }
+.tree-branch.red { border-left-color: var(--red); }
+.tree-branch .condition { font-family: "JetBrains Mono", monospace; font-size: 13px; color: var(--text-2); margin-bottom: 6px; }
+.tree-branch .action { font-weight: 600; font-size: 15px; }
+.tree-branch .detail { font-size: 13px; color: var(--text-2); margin-top: 6px; }
+
+.sidebar-box { background: var(--bg-2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin: 24px 0; }
+.sidebar-box h4 { margin-top: 0; color: var(--accent); }
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  nav { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+  main { padding: 32px 24px; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .meta-grid, .pros-cons { grid-template-columns: 1fr; }
+}
+
+/* Password gate */
+.gate-overlay { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+.gate-box { background: var(--bg-2); border: 1px solid var(--border); border-radius: 12px; padding: 40px 48px; max-width: 420px; width: 90%; text-align: center; }
+.gate-box h2 { font-size: 18px; margin: 0 0 8px; padding: 0; border: none; color: var(--accent); }
+.gate-box p { color: var(--text-3); font-size: 13px; margin-bottom: 24px; }
+.gate-box input { width: 100%; padding: 12px 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: inherit; font-size: 15px; outline: none; }
+.gate-box input:focus { border-color: var(--accent); }
+.gate-box button { width: 100%; margin-top: 12px; padding: 12px; background: var(--accent); color: var(--bg); border: none; border-radius: 6px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.gate-box button:hover { background: var(--accent-2); }
+.gate-error { color: var(--red); font-size: 12px; margin-top: 12px; min-height: 16px; }
+#content { display: none; }
+</style>
+</head>
+<body>
+
+<div class="gate-overlay" id="gate">
+  <div class="gate-box">
+    <h2>Skylarq · internal</h2>
+    <p>Password required to view.</p>
+    <form id="gate-form" onsubmit="return checkPassword(event)">
+      <input type="password" id="gate-input" autofocus placeholder="Password">
+      <button type="submit">Enter</button>
+      <div class="gate-error" id="gate-error"></div>
+    </form>
+  </div>
+</div>
+
+<div id="content">
+<div class="layout">
+
+<nav>
+  <div class="logo">Skylarq</div>
+  <div class="sublogo">GTM Workflow Meta-Analysis<br>v3 · 2026-05-12 · post-standup</div>
+
+  <span class="section-label">Overview</span>
+  <ul>
+    <li><a href="#changelog">What changed May 12</a></li>
+    <li><a href="#tldr">TL;DR</a></li>
+    <li><a href="#reality-check">Reality check</a></li>
+    <li><a href="#timeline">Real timeline</a></li>
+    <li><a href="#costs">Real cost stack</a></li>
+  </ul>
+
+  <span class="section-label">The Data</span>
+  <ul>
+    <li><a href="#skylarq-perf">Skylarq performance</a></li>
+    <li><a href="#bugs-shipped">Bugs we shipped</a></li>
+    <li><a href="#inspectmind">InspectMind case ($2K)</a></li>
+  </ul>
+
+  <span class="section-label">The Workflow</span>
+  <ul>
+    <li><a href="#stages">20 stages (with hours)</a></li>
+    <li><a href="#matrix">Automation matrix</a></li>
+    <li><a href="#evolution">Email evolution v4→v12</a></li>
+  </ul>
+
+  <span class="section-label">Strategy</span>
+  <ul>
+    <li><a href="#service-vs-vc">Service vs VC-backable</a></li>
+    <li><a href="#pricing">Pricing decision tree</a></li>
+    <li><a href="#wedges">Product wedges</a></li>
+    <li><a href="#cardinal">Cardinal benchmark</a></li>
+    <li><a href="#blame">What we eat blame for</a></li>
+    <li><a href="#ai-dependency">AI capability dependency</a></li>
+    <li><a href="#scope">Scope NOT addressing</a></li>
+    <li><a href="#convergence">3-ideas convergence</a></li>
+    <li><a href="#unknowns">What we don't know</a></li>
+    <li><a href="#dont">What NOT to do</a></li>
+    <li><a href="#recommendation">Honest recommendation</a></li>
+  </ul>
+
+  <span class="section-label">Appendix</span>
+  <ul>
+    <li><a href="#tools">Tool stack</a></li>
+    <li><a href="#artifacts">Raw artifacts</a></li>
+  </ul>
+</nav>
+
+<main>
+
+<div class="hero">
+  <span class="version-tag">Version 3 · Post-standup 2026-05-12 · Living document</span>
+  <h1>Skylarq GTM Workflow — Meta-Analysis
+    <span class="sub">Updated after May 12 standup with Jack + Mudit. First external revenue confirmed: Aakash paid <strong>$2,000 USD</strong> for the InspectMind ULI engagement — matches Cardinal's $2K/mo floor exactly. The central question shifts from "can we sell outbound as a service?" to "can we sell it with the discipline to refuse yes-man mode?" Audience: internal team. Treat this as a living standup-driven document, not a one-shot deliverable.</span>
+  </h1>
+</div>
+
+<section id="changelog">
+<div class="changelog">
+<h4>What changed May 12 (v2 → v3)</h4>
+<ul>
+  <li><span class="label">Revenue</span>First external revenue confirmed: <strong>$2,000 USD from Aakash</strong>. Matches Cardinal floor.</li>
+  <li><span class="label">Wedge</span>Wedge A now has concrete pricing model (Cardinal-style $2K retainer + per-meeting + per-inbox cap).</li>
+  <li><span class="label">Central Q</span>Shifted from "can we sell this?" to "can we sell this <em>with discipline</em>?" — i.e., refuse yes-man on copy.</li>
+  <li><span class="label">Time</span>Added time-per-step column to the 20-stage workflow. Stage 9 (client iteration) is the bottleneck.</li>
+  <li><span class="label">Filter</span>Client filter codified: ACV ≥ $5K → take. ACV &lt; $5K → don't.</li>
+  <li><span class="label">Domains</span>Per-client domain provisioning is mandatory at scale. Skylarq's own pool burns out in 2-3 bad client cycles.</li>
+  <li><span class="label">Counter</span>Personalization isn't always needed. Templated emails have run the industry forever. Mudit's pushback.</li>
+  <li><span class="label">Vision</span>Jack's "AI agent as service" vision codified — 90% automated infrastructure, humans pinged only at high-judgment moments.</li>
+  <li><span class="label">Tension</span>"Service vs VC-backable" surfaced as central strategic question.</li>
+  <li><span class="label">Reality</span>"We eat blame regardless" — even when client makes the call (Aakash insisting on copy we pushed back on).</li>
+</ul>
+</div>
+</section>
+
+<section id="tldr">
+<div class="tldr">
+<h4>TL;DR (v3, honest)</h4>
+<ul>
+  <li><strong>$2,000 USD in.</strong> Aakash paid for the InspectMind ULI engagement. First external revenue. Validates the $2K price anchor (matches Cardinal's floor exactly).</li>
+  <li><strong>Skylarq's own outbound: 0.28% reply rate</strong> on 6,072 sends. InspectMind day-1 looked similar (0.5% CTR on 366 sends) — but partially explained by client copy decisions we knew were wrong and conceded to anyway.</li>
+  <li><strong>The central question shifts:</strong> not "can we sell outbound as a service?" but "can we sell it with the <em>discipline</em> to refuse yes-man mode?" Cardinal does this at $2K × 30 clients. We're not there yet.</li>
+  <li><strong>2 of our own campaigns auto-paused for bounces</strong> in early May. Even with internal QA, deliverability isn't solved.</li>
+  <li><strong>The April 21 audit caught 38 already-shipped emails with material errors</strong> (24 spintax leaks, 14 cert-as-firstname). Internal QA framework was BUILT in response.</li>
+  <li><strong>Phillip-hours estimate on InspectMind: 30-60 hours</strong> over 5 weeks for $2K revenue. ~$33-67/hour effective rate. Service-economics, not SaaS-economics — yet.</li>
+  <li><strong>Stage 9 (client copy iteration) cannot be automated</strong> in its current form. Aakash had 5-6 explicit contradictions across feedback rounds. AI can't predict what a founder will object to in round 4 vs round 2 — they themselves don't know.</li>
+  <li><strong>~70% of the 20 stages ARE automatable.</strong> But "automatable" ≠ "valuable" — Apollo + Instantly + Claude already do most of it commodity-style.</li>
+  <li><strong>Personalization isn't always required</strong> (Mudit's counter-thesis). Templated emails run the industry. For acute-pain B2B, generic outperforms vague-personal. Reconsider where we spend personalization budget.</li>
+  <li><strong>We eat blame regardless of client decisions.</strong> Push back on copy → client insists → conversion misses → we own the miss. Structural agency reality. Defensive moves needed in SOW.</li>
+  <li><strong>Service business vs VC-backable</strong> is the unresolved strategic question. Jack's vision: AI agent infrastructure with humans only at high-judgment moments. Phillip's pushback: we're still capped by my bandwidth as the human in Stage 9.</li>
+  <li><strong>Honest product hypothesis:</strong> Vertical outbound managed service for founder-led companies in 1-2 verticals. $2-5K/mo retainer with $2K floor (Cardinal model). Per-email-inbox cap on volume. Refuse ACV &lt; $5K clients.</li>
+</ul>
+</div>
+</section>
+
+<section id="reality-check">
+<h2><span class="num">01</span> Reality check — what we built, what it did, what it earned</h2>
+
+<div class="stats-grid">
+  <div class="stat good"><div class="v">$2,000</div><div class="l">First external revenue (Aakash, InspectMind)</div></div>
+  <div class="stat"><div class="v">14</div><div class="l">live Skylarq campaigns (paused for InspectMind)</div></div>
+  <div class="stat"><div class="v">6,072</div><div class="l">total Skylarq sends to date</div></div>
+  <div class="stat good"><div class="v">23.9%</div><div class="l">open rate (Skylarq, real)</div></div>
+  <div class="stat bad"><div class="v">0.28%</div><div class="l">reply rate (Skylarq, real)</div></div>
+  <div class="stat bad"><div class="v">17</div><div class="l">total replies across all 14 campaigns</div></div>
+  <div class="stat warn"><div class="v">4.94%</div><div class="l">bounce rate (slightly hot)</div></div>
+  <div class="stat"><div class="v">2</div><div class="l">campaigns auto-paused for bounces (May 1-2)</div></div>
+  <div class="stat"><div class="v">3,870</div><div class="l">InspectMind leads</div></div>
+  <div class="stat"><div class="v">8,635</div><div class="l">InspectMind total sends planned</div></div>
+  <div class="stat"><div class="v">~30-60h</div><div class="l">Phillip-hours on InspectMind (5 weeks)</div></div>
+  <div class="stat warn"><div class="v">$33-67</div><div class="l">/hour effective rate</div></div>
+</div>
+
+<div class="callout">
+<h5>The number that matters most</h5>
+<p><strong>$2,000 revenue ÷ ~45 Phillip-hours ≈ $44/hour.</strong> That's service-business economics, not SaaS economics. If we want venture-backable, we need to either dramatically compress the hours (mechanize Stage 9) or dramatically raise the price ($10K+ retainers with the discipline to earn them).</p>
+<p>The other number that matters: <strong>0.28% reply rate</strong> on our own outbound. Top decile of cold outbound is 1-3%. We're bottom decile. Cardinal benchmark: $2K × 30 clients works because they're top-decile, not because they price low.</p>
+</div>
+</section>
+
+<section id="timeline">
+<h2><span class="num">02</span> Real timeline (reconstructed from file timestamps + billing)</h2>
+
+<div class="timeline">
+  <div class="timeline-item">
+    <div class="when">2026-04-08</div>
+    <p><strong>Mailbox infrastructure provisioned.</strong> 8 skylarq.* domains, 40 mailboxes on Zoho, Instantly warmup begins.</p>
+  </div>
+  <div class="timeline-item">
+    <div class="when">2026-04-14</div>
+    <p>First test sends. Warmup operational.</p>
+  </div>
+  <div class="timeline-item">
+    <div class="when">2026-04-17 → 04-19</div>
+    <p><strong>14 Skylarq campaigns built end-to-end</strong> over 3 days. 1,675 leads, mostly EXA-sourced. Instantly upgraded to Hypergrowth $97/mo.</p>
+  </div>
+  <div class="timeline-item">
+    <div class="when">2026-04-20</div>
+    <p><strong>All 14 Skylarq campaigns go live.</strong> First sends.</p>
+  </div>
+  <div class="timeline-item">
+    <div class="when">2026-04-21 (day 2)</div>
+    <p><strong>Audit finds 38 material errors shipped:</strong> 24 spintax leaks, 14 cert-as-firstname. <code>skylarq-qa.py</code> framework built same day.</p>
+  </div>
+  <div class="timeline-item">
+    <div class="when">2026-05-01 + 05-02</div>
+    <p><strong>Instantly auto-paused 2 campaigns</strong> for high bounce rate. Concrete proof deliverability needs ongoing monitoring.</p>
+  </div>
+  <div class="timeline-item">
+    <div class="when">2026-05-06</div>
+    <p>First positive reply notification from Instantly's classifier (Skylarq's own outbound).</p>
+  </div>
+  <div class="timeline-item">
+    <div class="when">2026-05-10</div>
+    <p><strong>InspectMind engagement begins in earnest.</strong> v9 templates written.</p>
+  </div>
+  <div class="timeline-item">
+    <div class="when">2026-05-11</div>
+    <p><strong>InspectMind v11 finalized and launched.</strong> 3,870 leads, 3 campaigns. Cadence bug caught mid-day (542 leads got 2 emails 16 min apart). Diagnosed root cause: Instantly's step delay semantics. Re-patched. Re-activated tonight with corrected delays.</p>
+  </div>
+  <div class="timeline-item">
+    <div class="when">2026-05-12 (today)</div>
+    <p><strong>Aakash $2K confirmed paid.</strong> First external revenue. Daily standup w/ Jack + Mudit produces this v3 document. Aakash sends multiple rounds of feedback (utm_term split, ULI20 placement, physical address for CAN-SPAM). All addressed by 9am CDT batch. v12 copy ships.</p>
+  </div>
+</div>
+</section>
+
+<section id="costs">
+<h2><span class="num">03</span> Real cost stack + InspectMind unit economics</h2>
+
+<div class="cost-card confirmed">
+  <div>
+    <div class="name">Anthropic Claude Max 20x</div>
+    <div class="role">Claude Code subscription · drives copy + scripts</div>
+  </div>
+  <div class="price">$200.00/mo</div>
+  <div class="source">Receipt confirmed</div>
+</div>
+
+<div class="cost-card confirmed">
+  <div>
+    <div class="name">Instantly Hypergrowth Plan</div>
+    <div class="role">Email sending + warmup + sequences · 40 mailboxes</div>
+  </div>
+  <div class="price">$97.00/mo</div>
+  <div class="source">Receipt confirmed</div>
+</div>
+
+<div class="cost-card estimated">
+  <div>
+    <div class="name">Zoho Mail (40 mailboxes)</div>
+    <div class="role">8 domains × 5 personas</div>
+  </div>
+  <div class="price">~$40-120/mo</div>
+  <div class="source">Public pricing estimate</div>
+</div>
+
+<div class="cost-card estimated">
+  <div>
+    <div class="name">8 domain registrations (Skylarq pool)</div>
+    <div class="role">skylarq.io/.org/.live/.xyz/.net/.tech/.us/.to</div>
+  </div>
+  <div class="price">~$10-15/mo amortized</div>
+  <div class="source">$10-20/year each</div>
+</div>
+
+<div class="cost-card unknown">
+  <div>
+    <div class="name">Per-client domain pool</div>
+    <div class="role">Required at scale — bad client copy kills Skylarq's own pool</div>
+  </div>
+  <div class="price">~$100-200/mo per engagement</div>
+  <div class="source">6-week warmup lead time</div>
+</div>
+
+<div class="cost-card unknown">
+  <div>
+    <div class="name">EXA / Apollo / Findymail / Linkup</div>
+    <div class="role">Enrichment cascade</div>
+  </div>
+  <div class="price">Unknown ~$0-200/mo</div>
+  <div class="source">No receipts found in Gmail</div>
+</div>
+
+<h3>InspectMind unit economics (first external client)</h3>
+<table>
+<thead><tr><th>Line</th><th class="num">Value</th></tr></thead>
+<tbody>
+<tr><td>Revenue from Aakash</td><td class="num good">+$2,000</td></tr>
+<tr><td>Skylarq infra (allocated, ~5 weeks)</td><td class="num">−$400</td></tr>
+<tr><td>Enrichment costs (est. EXA + Findymail for 3,870 leads)</td><td class="num">−$400-1,100</td></tr>
+<tr><td>Phillip hours (~45h × $0 not paid) at imputed $100/h</td><td class="num bad">−$4,500</td></tr>
+<tr><td>Akash hours (~10h imputed)</td><td class="num">−$1,000</td></tr>
+<tr><th>Imputed margin (loss)</th><th class="num bad">−$3,900 to −$4,500</th></tr>
+</tbody>
+</table>
+
+<div class="callout">
+<h5>What this means for the model</h5>
+<p>If we want this to be a business, EITHER:</p>
+<ol class="std">
+  <li><strong>Compress hours:</strong> mechanize Stage 9 → ~10 hours per engagement → $200/hour effective rate at $2K price → real margin.</li>
+  <li><strong>Raise price:</strong> $5-10K/mo retainer per Cardinal model → break-even at current 45h.</li>
+  <li><strong>Both:</strong> mechanize AND charge $5K+ → real economics.</li>
+</ol>
+<p>Status-quo at $2K + 45 hours is a teaching engagement, not a sustainable client.</p>
+</div>
+</section>
+
+<section id="skylarq-perf">
+<h2><span class="num">04</span> Skylarq's own performance — by campaign</h2>
+<p>Pulled from Instantly's <code>/campaigns/analytics</code>. Sorted by send volume. Top decile of cold outbound is 1-3% reply rate; we're at 0.28%.</p>
+
+<table>
+<thead><tr><th>Campaign</th><th class="num">Sent</th><th class="num">Open</th><th class="num">Reply</th><th class="num">OR%</th><th class="num">BR%</th></tr></thead>
+<tbody>
+<tr><td>Exp2B — Marketing Agency Owners</td><td class="num">290</td><td class="num">43</td><td class="num">0</td><td class="num warn">14.8</td><td class="num">3.8</td></tr>
+<tr><td>SM-SDR-Advice · founder-advice pitch</td><td class="num">271</td><td class="num">33</td><td class="num">0</td><td class="num warn">12.2</td><td class="num">4.1</td></tr>
+<tr><td>SM-Agency-Advice · founder-advice pitch</td><td class="num">270</td><td class="num">40</td><td class="num">0</td><td class="num warn">14.8</td><td class="num">4.1</td></tr>
+<tr><td>v2 — 1C Executive Recruiters</td><td class="num">248</td><td class="num">71</td><td class="num">0</td><td class="num good">28.6</td><td class="num">3.2</td></tr>
+<tr><td>Exp2C — Commercial Insurance Brokers</td><td class="num">238</td><td class="num">67</td><td class="num">0</td><td class="num good">28.2</td><td class="num warn">5.5</td></tr>
+<tr><td>v2 — 4B Industrial M&A Advisors</td><td class="num">238</td><td class="num">118</td><td class="num good">2</td><td class="num good">49.6</td><td class="num warn">5.5</td></tr>
+<tr><td>v2 — 4C Prof Services M&A Advisors</td><td class="num">236</td><td class="num">92</td><td class="num good">1</td><td class="num good">39.0</td><td class="num warn">5.9</td></tr>
+<tr><td><strong>v2 — 4A Healthcare M&A Advisors</strong> (auto-paused May 1)</td><td class="num">234</td><td class="num">97</td><td class="num good">3</td><td class="num good">41.5</td><td class="num bad">6.0</td></tr>
+<tr><td>v1 — H1 Business Brokers — Main Street</td><td class="num">227</td><td class="num">42</td><td class="num">1</td><td class="num warn">18.5</td><td class="num bad">6.6</td></tr>
+<tr><th>TOTAL (all 14)</th><th class="num">6,072</th><th class="num">1,452</th><th class="num">17</th><th class="num">23.9%</th><th class="num warn">4.94%</th></tr>
+</tbody>
+</table>
+
+<div class="callout real">
+<h5>Interpretation footnote (post-standup)</h5>
+<p>Jack's framing in the standup: <em>"the top 0.1% always performs in any market — investing, go-to-market, marketing, whatever. There's gonna be that bottom 90% that's just fucking garbage."</em></p>
+<p>Our 0.28% reply rate puts us in the bottom decile. The question isn't whether cold outbound works as a channel — Aakash paid $2K, Cardinal does $2K × 30 clients, top decile clearly performs. The question is whether we can MOVE to top decile via copy discipline, ICP discipline, and refusing yes-man mode on bad client requests. That's a different skill than the one we've been building (which was mostly: "execute fast across many campaigns").</p>
+</div>
+
+<h3>What works vs. what doesn't (Skylarq's own data)</h3>
+<ul class="std">
+  <li><strong>M&A advisor campaigns are best</strong> — 40-52% open rates, 1-3 replies per campaign. Real signal.</li>
+  <li><strong>RE Agent campaigns are dying</strong> — Nashville bounce 19.7%, Raleigh 13%. 5 campaigns killed for ICP drift.</li>
+  <li><strong>Founder-advice pitch (SM campaigns)</strong> — 12-15% open, 0 replies on 540 sends. Pitch doesn't land.</li>
+  <li><strong>AutonomousVC outlier</strong> — 75% open on 60 sends. Worth investigating: ICP fit or small-sample artifact?</li>
+</ul>
+</section>
+
+<section id="bugs-shipped">
+<h2><span class="num">05</span> Bugs that shipped (real, with counts)</h2>
+<p>From <code>docs/06 Audit Findings 2026-04-21.md</code>. These reached actual recipient inboxes before we caught them.</p>
+
+<div class="callout">
+<h5>Bug #1 · Spintax leaks — 24 recipients</h5>
+<p>Instantly's spintax engine didn't render <code>{X|Y|Z}</code> variants. 24 recipients saw literal curly-brace spintax in subject lines.</p>
+</div>
+
+<div class="callout">
+<h5>Bug #2 · Industry certifications used as first names — 14 recipients</h5>
+<p>"Hi TRIP," "Hi CBI," "Hi CMSBB," etc. — equivalent to opening with "Hi ENGINEER,"</p>
+</div>
+
+<div class="callout">
+<h5>Bug #3 · ICP mismatch — Exp2B Agency Owners at 66%</h5>
+<p>1 in 3 leads weren't actually agency owners. ~48 wasted sends.</p>
+</div>
+
+<div class="callout">
+<h5>Bug #4 · Auto-pauses for high bounce (May 1, May 2)</h5>
+<p>Instantly auto-paused 2 campaigns when bounce rate exceeded thresholds. Required manual intervention.</p>
+</div>
+
+<div class="callout">
+<h5>Bug #5 · NEW post-standup category — Client-introduced bugs</h5>
+<p>The InspectMind engagement added a new category: <em>bugs the client introduced via insisted-on copy decisions</em>. Phillip pushed back on Aakash's copy choices repeatedly across 4 rounds of feedback. Aakash kept some decisions Phillip disagreed with. The downstream conversion miss is attributed to Skylarq regardless.</p>
+<p>Structural reality: <strong>even when client makes the call against our advice, we own the outcome.</strong> See "What we eat blame for" section below.</p>
+</div>
+
+<div class="callout win">
+<h5>QA framework built in response</h5>
+<p><code>skylarq-qa.py</code> with 10 automated checks built April 21. Still missed 2 new pattern types in InspectMind work (Lifestyle Communities' 37 truncation, NBA abbreviation). Framework needs another iteration.</p>
+</div>
+</section>
+
+<section id="inspectmind">
+<h2><span class="num">06</span> InspectMind case study — first $2K paid engagement</h2>
+
+<h3>What Aakash paid for ($2,000 USD)</h3>
+<ol class="std">
+  <li><strong>Lead acquisition (manual scraping):</strong> Phillip scraped ULI Spring 2026 attendee website page by page. 3,872 confirmed ICP after filtering.</li>
+  <li><strong>Enrichment cascade</strong> via EXA → Findymail → Apollo → ContactOut to fill emails, titles, firm signals.</li>
+  <li><strong>Tiered personalization research</strong> — 50 Tier 1 hand-curated, 745 Tier 2 firm-news, 3,075 Tier 3 cascade.</li>
+  <li><strong>Twelve copy versions</strong> (v3 → v12) iterated with Aakash over 4+ formal feedback rounds across early May. Each round was meaningful structural change, not word tweaks.</li>
+  <li><strong>Campaign provisioning</strong> via Instantly API. 3 campaigns × 5/3/2-step sequences.</li>
+  <li><strong>40-mailbox pool dedicated</strong> by pausing Skylarq's own 14 campaigns.</li>
+  <li><strong>Deliverability testing</strong> across 6 senders × 2 inboxes.</li>
+  <li><strong>Multiple last-minute hotfixes:</strong> http→https URL, cadence bug, ULI20 placement, UTM segment split, sales-voice cleanup, CAN-SPAM compliance.</li>
+  <li><strong>Live campaign activation + monitoring.</strong></li>
+</ol>
+
+<h3>What we know vs don't know</h3>
+<table>
+<thead><tr><th>Question</th><th>Answer</th></tr></thead>
+<tbody>
+<tr><td>Revenue from Aakash</td><td><strong class="good" style="color:var(--green)">$2,000 USD confirmed paid</strong></td></tr>
+<tr><td>Expected total sends</td><td>8,635 across 2-4 weeks</td></tr>
+<tr><td>Day-1 stats</td><td>1,038 sent, 388 opens (37%), 2 replies (both Brian Dinerstein "Unsubscribe"), 20 bounces (1.9%)</td></tr>
+<tr><td>Expected reply rate</td><td>If we hit Skylarq's 0.28% baseline → 24 replies on 8,635 sends. Top-decile 1-3% → 86-260 replies.</td></tr>
+<tr><td>Expected upload conversion</td><td>Unknown — needs Aakash's PostHog data post-campaign</td></tr>
+<tr><td>Aakash's ACV per project</td><td>$50/project. Need 10-20 paid uploads attributable to ULISpring to make his $2K pencil at his pricing.</td></tr>
+<tr><td>Will Aakash come back for next conference?</td><td><strong>The success metric.</strong> Jack hypothesis: no (this was residue of existing engagement). Phillip hypothesis: yes (he's already proposed separate cold outbound).</td></tr>
+<tr><td>Phillip hours</td><td>Ballpark 30-60 over 5 weeks (no formal tracking)</td></tr>
+<tr><td>Stage 9 hours specifically</td><td>~15-25 of those hours — the bottleneck</td></tr>
+</tbody>
+</table>
+
+<div class="callout real">
+<h5>The Aakash $50 ACV problem</h5>
+<p>Aakash charges $50/project for InspectMind plan reviews. For our $2K engagement to pencil for HIM, he needs to convert 40+ paid projects attributable to the ULI campaign (40 × $50 = $2K break-even).</p>
+<p>If conversion = 1% of 3,870 leads = 38.7 paid uploads → break-even.<br>
+If conversion = 0.5% = 19.4 paid → $1K loss.<br>
+If conversion = 0.1% (matching Skylarq's reply rate floor) = 3.87 paid → ~$1.8K loss for Aakash.</p>
+<p><strong>Implication:</strong> the math is brutal at $50 ACV. Aakash is in the "ACV &lt; $5K, don't take" bucket per the pricing decision tree below. He paid $2K but the unit economics for HIM don't work at his price point. Translation: <strong>he probably won't come back unless he raises his ACV or we deliver outlier conversion.</strong></p>
+</div>
+</section>
+
+<section id="stages">
+<h2><span class="num">07</span> The 20-stage workflow (with Phillip-hours)</h2>
+<p>Click each stage to expand. Tagged by automation potential AND time spent.</p>
+<div class="controls">
+  <button onclick="document.querySelectorAll('.stage').forEach(s=>s.classList.add('open'))">Expand all</button>
+  <button onclick="document.querySelectorAll('.stage').forEach(s=>s.classList.remove('open'))">Collapse all</button>
+</div>
+
+<div class="stage">
+<div class="stage-header" onclick="this.parentElement.classList.toggle('open')">
+  <span class="badge">01</span><span class="title">Client intake / scoping call</span><span class="time">2-4h</span><span class="auto auto-no">❌ Not automatable</span>
+</div>
+<div class="stage-body">
+  <p><strong>InspectMind:</strong> Aakash reached out via Slack. 30-60 min discovery via Zoom + Slack threads over 1-2 weeks.</p>
+  <p><strong>Why not automatable:</strong> Founders trust people, not dashboards. Aakash's entire engagement is Slack with Phillip, not a SaaS portal.</p>
+  <p><strong>Mudit standup note:</strong> "Intake call is probably always going to be there no matter what idea we pursue. Probably have to do it or get sales team to do it at some point."</p>
+</div>
+</div>
+
+<div class="stage">
+<div class="stage-header" onclick="this.parentElement.classList.toggle('open')">
+  <span class="badge">02</span><span class="title">ICP definition</span><span class="time">2-4h</span><span class="auto auto-partial">⚠️ 30%</span>
+</div>
+<div class="stage-body">
+  <p><strong>InspectMind:</strong> Aakash mid-engagement said <em>"actually send to the non-ICP ones too — worst case more awareness"</em> — a budget call AI can't make.</p>
+  <p><strong>Skylarq's own:</strong> Apr 21 audit found Exp2B Agency Owners ICP only 66% match. 5 RE Agent campaigns killed for ICP drift mid-flight.</p>
+</div>
+</div>
+
+<div class="stage">
+<div class="stage-header" onclick="this.parentElement.classList.toggle('open')">
+  <span class="badge">03</span><span class="title">Lead sourcing — the manual reality</span><span class="time">8-12h</span><span class="auto auto-partial">⚠️ 30%</span>
+</div>
+<div class="stage-body">
+  <p><strong>InspectMind:</strong> Phillip manually scraped ULI Spring 2026 conference website page by page. No clean API.</p>
+  <p><strong>Why this matters:</strong> v1 of this doc said "use Apollo/ZoomInfo." That's only true when a directory exists. For conferences, industry awards, regional chapters — the lead acquisition is genuinely manual.</p>
+  <p><strong>Mudit standup note:</strong> "For a generic GTM workflow, the conference scraping thing goes away" — but the equivalent (custom data acquisition per client's vertical) doesn't.</p>
+</div>
+</div>
+
+<div class="stage">
+<div class="stage-header" onclick="this.parentElement.classList.toggle('open')">
+  <span class="badge">04</span><span class="title">Lead enrichment</span><span class="time">1-2h</span><span class="auto auto-yes">✅ 90%+</span>
+</div>
+<div class="stage-body">
+  <p>Multi-provider waterfall: Findymail → Apollo → ContactOut → EXA. APIs exist. Commodity. Not a wedge.</p>
+</div>
+</div>
+
+<div class="stage">
+<div class="stage-header" onclick="this.parentElement.classList.toggle('open')">
+  <span class="badge">05</span><span class="title">ICP filtering</span><span class="time">2-3h</span><span class="auto auto-partial">⚠️ 70%</span>
+</div>
+<div class="stage-body">
+  <p>Rule application is automatable. Deciding which rule to bend when client wants to is not. Apr 21 audit found Exp2B at 66% match.</p>
+</div>
+</div>
+
+<div class="stage">
+<div class="stage-header" onclick="this.parentElement.classList.toggle('open')">
+  <span class="badge">06</span><span class="title">Signal/news research per lead</span><span class="time">4-8h</span><span class="auto auto-partial">⚠️ 60%</span>
+</div>
+<div class="stage-body">
+  <p><strong>InspectMind:</strong> Tier 1 hand-curated; Tier 2 firm-news from EXA; Tier 3 cascade. 2 hallucination bugs caught by Aakash (Lifestyle Communities' 37 truncation; NBA abbreviation).</p>
+  <div class="callout">
+    <h5>Mudit's counter-thesis (May 12 standup)</h5>
+    <p><strong>Personalization isn't always required.</strong> Templated emails have run the industry forever. For acute-pain B2B ("cure for cancer" example), generic outperforms vague-personal. Web search isn't always required either.</p>
+    <p>This shifts where we spend personalization budget. Maybe T3's broadest cohort doesn't need per-lead signals at all — better generic copy might convert higher.</p>
+  </div>
+  <div class="callout real">
+    <h5>The hyper-personalization arms race</h5>
+    <p>LinkedIn-post-based personalization is now table stakes (every AISDR does it). The new edge per Phillip's standup: <strong>conference-attendance-based</strong> personalization. "Caught up at ULI" + observation about their firm = different psychology than pure cold. Untested hypothesis but worth running.</p>
+  </div>
+</div>
+</div>
+
+<div class="stage">
+<div class="stage-header" onclick="this.parentElement.classList.toggle('open')">
+  <span class="badge">07</span><span class="title">Tier assignment + cadence design</span><span class="time">0.5h</span><span class="auto auto-yes">✅ 100%</span>
+</div>
+<div class="stage-body">
+  <p>Pure mechanical. T1 (50) gets 5-email 21-day cadence. T2 (745) gets 3-email 14-day. T3 (3,075) gets 2-email 7-day.</p>
+</div>
+</div>
+
+<div class="stage">
+<div class="stage-header" onclick="this.parentElement.classList.toggle('open')">
+  <span class="badge">08</span><span class="title">Initial copy draft (v1)</span><span class="time">3-5h</span><span class="auto auto-partial">⚠️ 50%</span>
+</div>
+<div class="stage-body">
+  <p>Phillip drafts in Claude with reps + intuition. AI assists but doesn't replace.</p>
+  <p>Skylarq has codified a subject formula: <code>[lowercase descriptive hook with QUALIFIED numbers + embedded WHY] - [industry-native tag]</code>.</p>
+</div>
+</div>
+
+<div class="stage open">
+<div class="stage-header" onclick="this.parentElement.classList.toggle('open')">
+  <span class="badge">09</span><span class="title">Client feedback loop on copy ★ THE BIG BOTTLENECK</span><span class="time">15-25h</span><span class="auto auto-no">❌ 0-5%</span>
+</div>
+<div class="stage-body">
+  <p><strong>InspectMind:</strong> 4 formal rounds with Aakash over ~5 days in early May. v3 → v8/v9 → v10 → v11 → v12. Plus 2 small tweaks post-launch.</p>
+
+  <h4>Why AI cannot replicate this (yet)</h4>
+  <p>Aakash had <strong>5-6 explicit contradictions across feedback rounds</strong>:</p>
+  <ul class="std">
+    <li>Round 2: ADD credibility list. Round 3: REMOVE credibility list (too generic).</li>
+    <li>Round 4: subject "Catch issues before permit submission." Post-launch: "Actually, make it shorter — drop 'plan' is OK but trim."</li>
+    <li>Wants pitchy E1 in his v12. v4 doc says "no pitch in E1." Internal conflict in his own playbook.</li>
+  </ul>
+  <p>AI cannot predict round 4 from round 2 because the client themselves doesn't know what they want until they see what they don't want.</p>
+
+  <div class="callout real">
+    <h5>Jack's standup suggestion — Slack bot for client response</h5>
+    <p><em>"If he's using AI to judge all of the fucking emails, why can't we use AI to respond? Maybe we can just set up a Slack bot in there as well."</em></p>
+    <p>Worth experimenting. If a Slack bot can handle 60-80% of client copy iteration (the back-and-forth, version control, "here's what I think you meant" interpretation), Stage 9 hours drop from 15-25h to 5-10h per engagement. That's the leverage moment.</p>
+  </div>
+
+  <div class="callout">
+    <h5>The "we eat blame regardless" reality</h5>
+    <p>Phillip pushed back on multiple Aakash copy decisions. Aakash kept some of them. Day-1 conversion miss attributed to Skylarq regardless. See dedicated section below.</p>
+  </div>
+</div>
+</div>
+
+<div class="stage">
+<div class="stage-header" onclick="this.parentElement.classList.toggle('open')">
+  <span class="badge">10</span><span class="title">Personalization QA passes</span><span class="time">2-3h</span><span class="auto auto-partial">⚠️ 70%</span>
+</div>
+<div class="stage-body">
+  <p><code>skylarq-qa.py</code> with 10 checks. Still missed 2 patterns in InspectMind work that Aakash caught. Framework needs round 2.</p>
+</div>
+</div>
+
+<div class="stage">
+<div class="stage-header" onclick="this.parentElement.classList.toggle('open')">
+  <span class="badge">11</span><span class="title">UTM tracking + URL setup</span><span class="time">0.5h</span><span class="auto auto-yes">✅ 100%</span>
+</div>
+<div class="stage-body">
+  <p>Tagged. Aakash requested utm_term=email1-5 + utm_content=T&lt;tier&gt; + segment fork on E4 (utm_term=email4_developer/architect/gc/government/other). All patched May 12.</p>
+</div>
+</div>
+
+<div class="stage">
+<div class="stage-header" onclick="this.parentElement.classList.toggle('open')">
+  <span class="badge">12</span><span class="title">Email sending infrastructure</span><span class="time">0h (built) / 6wk new</span><span class="auto auto-partial">⚠️ 70%</span>
+</div>
+<div class="stage-body">
+  <p><strong>Current state:</strong> 40 mailboxes, 8 domains, warmed since April 8.</p>
+  <div class="callout">
+    <h5>NEW post-standup constraint — Skylarq pool burns out fast</h5>
+    <p>Bad client copy actively degrades the 40-mailbox pool's reputation. Phillip's standup observation: <em>"After 2-3 rounds of this kind of stuff [low reply rate, mediocre copy], I wouldn't be surprised if our 40 domains are not being able to use."</em></p>
+    <p><strong>Implication:</strong> at scale, MUST buy custom domains per client. ~$100-200/mo per engagement infrastructure cost. 4-6 week warmup lead time = HARD schedule constraint for new clients.</p>
+  </div>
+  <div class="callout info">
+    <h5>Two alternative paths</h5>
+    <ol class="std">
+      <li><strong>Generic ascending domains</strong> that don't sound spammy on the From line. Pre-warmed by Skylarq, no client-specific TLD.</li>
+      <li><strong>Use client's own warmed domains</strong> when they have them. Faster but most clients don't have ready domains (which is partly why they hire us).</li>
+    </ol>
+    <p>Jack standup quote: <em>"Maybe that's why they think we're valuable — because we have the infrastructure already set up for them."</em></p>
+  </div>
+  <p><strong>Sender persona issue:</strong> We removed the "-Alex/-Aakash" signature because 40-mailbox pool sends from 5 personas (alex/jack/phil/phillip/sarah). Signing one name created mismatch with the actual From-line.</p>
+</div>
+</div>
+
+<div class="stage">
+<div class="stage-header" onclick="this.parentElement.classList.toggle('open')">
+  <span class="badge">13</span><span class="title">Campaign creation in Instantly (API)</span><span class="time">0.25h</span><span class="auto auto-yes">✅ 95%</span>
+</div>
+<div class="stage-body">
+  <p>One API call per campaign. Scripted via <code>POST /campaigns</code>.</p>
+</div>
+</div>
+
+<div class="stage">
+<div class="stage-header" onclick="this.parentElement.classList.toggle('open')">
+  <span class="badge">14</span><span class="title">Lead upload with custom variables</span><span class="time">0.5h</span><span class="auto auto-yes">✅ 100%</span>
+</div>
+<div class="stage-body">
+  <p>3,870 leads × per-lead rendered custom_variables uploaded in ~3 min via 15-thread parallel POSTs.</p>
+</div>
+</div>
+
+<div class="stage">
+<div class="stage-header" onclick="this.parentElement.classList.toggle('open')">
+  <span class="badge">15</span><span class="title">Deliverability testing</span><span class="time">1-2h</span><span class="auto auto-partial">⚠️ 60%</span>
+</div>
+<div class="stage-body">
+  <p>Tested across 6 senders × 2 inboxes. Personal Gmail = 1/6 inbox. Workspace = 3/4 (75%).</p>
+</div>
+</div>
+
+<div class="stage">
+<div class="stage-header" onclick="this.parentElement.classList.toggle('open')">
+  <span class="badge">16</span><span class="title">Pre-launch hotfix</span><span class="time">2-3h</span><span class="auto auto-partial">⚠️ 70%</span>
+</div>
+<div class="stage-body">
+  <p>http→https URL bug. -Alex signature stripping. Cadence step-delay bug (catastrophic, caught mid-flight). Aakash-caught: NBA hallucination, Lifestyle Communities' 37 truncation, 2 duplicate emails.</p>
+  <p><strong>3 of 5 critical bugs caught by client, not by us.</strong> QA discipline still needs another iteration.</p>
+</div>
+</div>
+
+<div class="stage">
+<div class="stage-header" onclick="this.parentElement.classList.toggle('open')">
+  <span class="badge">17</span><span class="title">Activation</span><span class="time">0.25h</span><span class="auto auto-yes">✅ 100%</span>
+</div>
+<div class="stage-body">
+  <p>One API call per campaign. Stress-inducing for Phillip, invisible to Aakash.</p>
+</div>
+</div>
+
+<div class="stage">
+<div class="stage-header" onclick="this.parentElement.classList.toggle('open')">
+  <span class="badge">18</span><span class="title">Live monitoring</span><span class="time">1-3h/wk ongoing</span><span class="auto auto-partial">⚠️ 70%</span>
+</div>
+<div class="stage-body">
+  <p>Skylarq has cron jobs for daily metrics push (sheets), QA scan, reply classification. Productized internally.</p>
+</div>
+</div>
+
+<div class="stage">
+<div class="stage-header" onclick="this.parentElement.classList.toggle('open')">
+  <span class="badge">19</span><span class="title">Reply handling</span><span class="time">0.5h/wk per client</span><span class="auto auto-partial">⚠️ 30%</span>
+</div>
+<div class="stage-body">
+  <p>Classifier auto-categorizes (Interested / OOO / Unsubscribe / Spam complaint / Question). Stop-on-reply removes from sequence.</p>
+  <div class="callout">
+    <h5>NEW — TAM exhaustion constraint (Mudit, standup)</h5>
+    <p>Once you email a lead, you can't re-email for ~1 month (deliverability + recipient annoyance). Aggressive clients (Vishal-type, wanting unlimited emails) exhaust their reachable universe quickly.</p>
+    <p><strong>Pricing implication:</strong> per-email-inbox pricing creates a natural cap. "5K mailboxes × 30 emails/day × 22 business days = ~3.3M emails/month theoretical max" — but in practice, the ICP is far smaller. Pricing must reflect the actual TAM, not aspirational volumes.</p>
+  </div>
+</div>
+</div>
+
+<div class="stage">
+<div class="stage-header" onclick="this.parentElement.classList.toggle('open')">
+  <span class="badge">20</span><span class="title">Post-campaign analysis</span><span class="time">2-4h</span><span class="auto auto-partial">⚠️ 80%</span>
+</div>
+<div class="stage-body">
+  <p>This document is itself an instance of this stage. Apr 21 audit produced <code>skylarq-qa.py</code>. Each campaign should produce a lesson.</p>
+</div>
+</div>
+
+<p style="margin-top: 32px; color: var(--text-2); font-size: 14px;"><strong>Total estimated Phillip-hours per InspectMind-like engagement: ~45-60h.</strong> Stage 9 alone is 35-45% of that. Mechanizing Stage 9 (Jack's Slack-bot hypothesis) would unlock the biggest leverage.</p>
+</section>
+
+<section id="matrix">
+<h2><span class="num">08</span> Automation + time matrix</h2>
+<table>
+<thead><tr><th>#</th><th>Stage</th><th>AI one-shot?</th><th class="num">Hours</th><th class="num">Human %</th></tr></thead>
+<tbody>
+<tr><td>01</td><td>Intake call</td><td>❌ No</td><td class="num">2-4</td><td class="num">100%</td></tr>
+<tr><td>02</td><td>ICP definition</td><td>⚠️ Partial</td><td class="num">2-4</td><td class="num">60%</td></tr>
+<tr><td>03</td><td>Lead sourcing</td><td>⚠️ Partial</td><td class="num">8-12</td><td class="num">70%</td></tr>
+<tr><td>04</td><td>Enrichment</td><td>✅ Yes</td><td class="num">1-2</td><td class="num">10%</td></tr>
+<tr><td>05</td><td>ICP filtering</td><td>⚠️ Partial</td><td class="num">2-3</td><td class="num">30%</td></tr>
+<tr><td>06</td><td>Signal research</td><td>⚠️ Partial</td><td class="num">4-8</td><td class="num">40%</td></tr>
+<tr><td>07</td><td>Tier + cadence</td><td>✅ Yes</td><td class="num">0.5</td><td class="num">0%</td></tr>
+<tr><td>08</td><td>Initial copy</td><td>⚠️ Partial</td><td class="num">3-5</td><td class="num">50%</td></tr>
+<tr><td>09</td><td><strong>Client iteration ★</strong></td><td>❌ <strong>No</strong></td><td class="num bad"><strong>15-25</strong></td><td class="num"><strong>100%</strong></td></tr>
+<tr><td>10</td><td>Personalization QA</td><td>⚠️ Partial</td><td class="num">2-3</td><td class="num">30%</td></tr>
+<tr><td>11</td><td>UTM/URLs</td><td>✅ Yes</td><td class="num">0.5</td><td class="num">0%</td></tr>
+<tr><td>12</td><td>Infrastructure</td><td>⚠️ Partial</td><td class="num">0 / 6wk new</td><td class="num">30%</td></tr>
+<tr><td>13</td><td>Campaign creation</td><td>✅ Yes</td><td class="num">0.25</td><td class="num">0%</td></tr>
+<tr><td>14</td><td>Lead upload</td><td>✅ Yes</td><td class="num">0.5</td><td class="num">0%</td></tr>
+<tr><td>15</td><td>Deliverability test</td><td>⚠️ Partial</td><td class="num">1-2</td><td class="num">40%</td></tr>
+<tr><td>16</td><td>Pre-launch hotfix</td><td>⚠️ Partial</td><td class="num">2-3</td><td class="num">50%</td></tr>
+<tr><td>17</td><td>Activation</td><td>✅ Yes</td><td class="num">0.25</td><td class="num">0%</td></tr>
+<tr><td>18</td><td>Monitoring</td><td>⚠️ Partial</td><td class="num">1-3/wk</td><td class="num">40%</td></tr>
+<tr><td>19</td><td>Reply handling</td><td>⚠️ Partial</td><td class="num">0.5/wk</td><td class="num">70%</td></tr>
+<tr><td>20</td><td>Post-analysis</td><td>⚠️ Partial</td><td class="num">2-4</td><td class="num">40%</td></tr>
+<tr><th>Total</th><th></th><th></th><th class="num"><strong>45-60h</strong></th><th></th></tr>
+</tbody>
+</table>
+</section>
+
+<section id="evolution">
+<h2><span class="num">09</span> Email evolution v4 → v12</h2>
+<p>12+ versions total. Sample: Helena Schultz @ AEI (architect, T2).</p>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab(event, 'v4')">v4 ORIGINAL</button>
+  <button class="tab" onclick="showTab(event, 'v9')">v9</button>
+  <button class="tab" onclick="showTab(event, 'v10')">v10</button>
+  <button class="tab" onclick="showTab(event, 'v11')">v11</button>
+  <button class="tab" onclick="showTab(event, 'v12')">v12 LIVE</button>
+</div>
+
+<div class="tab-panel active" id="v4">
+<h4>v4 — Aakash's first proposal (April)</h4>
+<p style="color:var(--text-3);font-size:13px">Pricing in body ($50/money back), name-drops, "Best, Aakash" signoff. Reads as startup pitch.</p>
+</div>
+
+<div class="tab-panel" id="v9">
+<h4>v9 — After round 1 (early May)</h4>
+<p style="color:var(--text-3);font-size:13px">Dropped pricing + name-drops. "AI QA/QC layer" framing.</p>
+</div>
+
+<div class="tab-panel" id="v10">
+<h4>v10 — After round 2</h4>
+<p style="color:var(--text-3);font-size:13px">Added 20% ULI urgency + single CTA + broad credibility list.</p>
+</div>
+
+<div class="tab-panel" id="v11">
+<h4>v11 — After round 3 (launched May 11)</h4>
+<p style="color:var(--text-3);font-size:13px">Concrete outcomes (RFIs, change orders, rework). "No setup. No demo. No sales call." Multi-step cadence shipped — caught + fixed step-delay bug mid-day.</p>
+</div>
+
+<div class="tab-panel" id="v12">
+<h4>v12 — LIVE (May 12, post-standup-feedback)</h4>
+<p style="color:var(--text-3);font-size:13px">Aakash's rewrite + Phillip's cleanup. Tighter (~70-word E1). ULI20 only in first-follow-up per tier. utm_term per email step. utm_term per E4 segment. CAN-SPAM-compliant footer with InspectMind's physical address (156 2nd St, San Francisco, CA). E5 hyperlinked. 112 sales-voice slips stripped from personalization_lines.</p>
+<div class="email-card"><div class="email-header"><div class="subject">Catch plan issues before permit submission</div>v12 LIVE</div><div class="email-body">Hi Helena,
+
+Noticed AEI becoming an official FORTIFIED evaluator. Thought this might be useful for catching coordination and code issues before permit submission.
+
+Upload a PDF drawing/spec set, get a page-numbered report of coordination, constructability, and code-related issues back in minutes. No setup. No demo. No sales call.
+
+Try it on a real project: https://inspectmind.ai/?utm_source=ULISpring&utm_medium=email&utm_campaign=ulispring&utm_content=T2&utm_term=email1
+
+—
+InspectMind AI · 156 2nd St, San Francisco, CA · Reply STOP to unsubscribe</div></div>
+</div>
+</section>
+
+<section id="service-vs-vc">
+<h2><span class="num">10</span> Service business vs venture-backable — THE central question</h2>
+
+<p>Surfaced in the May 12 standup. The unresolved strategic question.</p>
+
+<div class="pros-cons">
+<div class="pros"><h5>Jack's vision (AI agent as service)</h5><ul>
+  <li>90% of the 20 stages mechanized via AI agents</li>
+  <li>Humans only get pinged at high-judgment moments</li>
+  <li>Infrastructure on AWS, drop client info into execution loops</li>
+  <li>Scales to hundreds of clients with bounded human labor</li>
+  <li>Path to VC-backable valuation: it's "AI infrastructure" not "agency"</li>
+  <li>Cardinal already does this at small scale (20-30 clients, $2K floor, very happy customers)</li>
+</ul></div>
+<div class="cons"><h5>Phillip's pushback (we're still a service business)</h5><ul>
+  <li>Stage 9 (client copy iteration) is the bottleneck — currently 15-25h per engagement, ALL Phillip</li>
+  <li>Even at 5x productivity vs pre-2025, Phillip is still the human in the loop</li>
+  <li>The leverage AI provides is "do services more efficiently" — but the service still scales with humans</li>
+  <li>Agencies are valued at 0.5-1.5× ARR by investors. VC won't fund this.</li>
+  <li>Can't sell to investors as SaaS. We'd be lying about the unit shape.</li>
+</ul></div>
+</div>
+
+<div class="callout real">
+<h5>The honest split</h5>
+<p><strong>What both Jack and Phillip agree on:</strong> in the next 1-2 years, AI agents WILL mechanize more of the 20 stages. The question is whether Stage 9 — the irreducibly-human copy-iteration loop — can be reduced from 15-25h to 5-10h via better tooling (Slack bot for client interaction, structured-feedback templates, etc.).</p>
+<p><strong>If yes:</strong> we have a venture-backable infrastructure play. 100 clients × $5K/mo retainer × 80% gross margin = $4.8M annual gross profit. Real business.</p>
+<p><strong>If no:</strong> we're an agency that uses AI to be 5x more productive than competitors. Still profitable, but $50-200K annual gross profit per Phillip. Lifestyle business, not VC-backable.</p>
+<p><strong>Status today:</strong> we're closer to the second. The path to the first runs through mechanizing Stage 9. That's the open R&D bet.</p>
+</div>
+
+<div class="callout">
+<h5>Phillip's standup framing</h5>
+<p><em>"Despite the fact that I'm 5x more productive, I'm still the human in the loop. And in that case, it's hard to envision that we can truly productize myself."</em></p>
+<p><em>"If you ask me which segment, I'd be confident in doing conference follow-up vs pure cold outbound — at least we have warm context to leverage."</em></p>
+</div>
+</section>
+
+<section id="pricing">
+<h2><span class="num">11</span> Pricing decision tree — who we take, who we refuse</h2>
+
+<p>Concrete output of the May 12 standup. Rule-based client filter.</p>
+
+<div class="tree">
+
+<div class="tree-branch green">
+<div class="condition">if client.ACV >= $100,000</div>
+<div class="action">Take · outcome-based pricing OK</div>
+<div class="detail">1 deal pays for the entire engagement. $5-10K/mo retainer + per-meeting bonus. Example: enterprise SaaS targeting Fortune 500.</div>
+</div>
+
+<div class="tree-branch green">
+<div class="condition">if $5,000 <= client.ACV < $100,000</div>
+<div class="action">Take · $2-5K/mo retainer + per-meeting bonus</div>
+<div class="detail">Cardinal's sweet spot. Need conversion rate of ~5-10% to make it pencil for both sides. Example: mid-market B2B SaaS, professional services firms.</div>
+</div>
+
+<div class="tree-branch red">
+<div class="condition">if client.ACV < $5,000</div>
+<div class="action">DON'T TAKE · math doesn't work</div>
+<div class="detail">At $50 ACV (Aakash/InspectMind case), need 40+ paid conversions for $2K retainer to break even. Conversion rate of ~1% on 3,870 leads = 38.7. Marginal. <strong>We took this one; lesson learned.</strong></div>
+</div>
+
+<div class="tree-branch yellow">
+<div class="condition">special case: pre-revenue YC company with VC money</div>
+<div class="action">Maybe · validate by VC backing, not ACV</div>
+<div class="detail">If they're VC-backed and need outbound to validate ICP, they have budget but no ACV yet. Cardinal's filter: $2K/mo floor → naturally selects for companies with money to spend. Use that.</div>
+</div>
+
+</div>
+
+<h3>Pricing model — recommended for Wedge A</h3>
+<ul class="std">
+  <li><strong>Base retainer:</strong> $2,000/mo floor (Cardinal benchmark). Goes up based on volume + complexity.</li>
+  <li><strong>Per-meeting bonus:</strong> $200-500 per qualified meeting booked.</li>
+  <li><strong>Per-email-inbox cap:</strong> price tiered by # of dedicated mailboxes (5/10/20/40). Natural volume cap. Prevents Vishal-abuse pattern (client wants to email 10K leads/month).</li>
+  <li><strong>Custom domains per client:</strong> ~$100-200/mo added to retainer. Protects Skylarq's pool.</li>
+  <li><strong>Modular scope:</strong> "$X for this conference; anything else is additional." Cardinal model. Refuse scope creep.</li>
+</ul>
+
+<div class="callout">
+<h5>The Vishal-abuse pattern</h5>
+<p>Standup observation: clients given unlimited email volume will abuse it. Vishal example: <em>"He seems like the type who'd want to reach out to every VP, then every PM, then everyone on the team. Give him 1K leads, he wants another 1K."</em></p>
+<p>Per-email-inbox pricing creates an artificial volume cap. Client controls how many leads they reach by paying for more mailbox capacity. Forces ICP discipline.</p>
+</div>
+</section>
+
+<section id="wedges">
+<h2><span class="num">12</span> Product wedges — re-examined post-standup</h2>
+
+<div class="wedge recommended">
+<span class="tag">⭐ Primary hypothesis — refined</span>
+<h3>Wedge A — Vertical Outbound Managed Service (with discipline)</h3>
+<p>Run outbound end-to-end for founder-led companies in 1-2 verticals (AEC + something else). $2K floor. Refuse yes-man mode on copy. Modular scope.</p>
+
+<div class="pay-test">
+<h5>The "would I pay $X for this?" test — UPDATED</h5>
+<p><strong>If I were Aakash today:</strong> Would I pay another $2K for next conference? <strong>Probably yes IF reply rate hits 1%+ on this campaign.</strong> Less likely if it stays at 0.28%. Validation event is in 2-3 weeks.</p>
+<p><strong>Anchor:</strong> Cardinal's customer reviews are happy at $2K/mo × 20-30 clients. We CAN charge $2K/mo. Question is whether we deliver at top-decile quality.</p>
+</div>
+
+<div class="pros-cons">
+<div class="pros"><h5>Why it might work (post-standup)</h5><ul>
+  <li>Aakash paid $2K. First external validation</li>
+  <li>40-mailbox warmed pool + 30+ scripts = real infrastructure</li>
+  <li>Cardinal proves the model at $2K × 30 clients</li>
+  <li>Per-meeting pricing aligns incentives</li>
+  <li>AI mechanizes ~70% of stages — labor-light vs traditional agencies</li>
+  <li>Conference-specific follow-up has natural warm-context edge over pure cold outbound</li>
+</ul></div>
+<div class="cons"><h5>Why it might NOT</h5><ul>
+  <li>0.28% reply rate is bottom decile — we need to prove top-decile chops</li>
+  <li>Stage 9 caps concurrent clients at ~3 for Phillip</li>
+  <li>Skylarq's 40-mailbox pool burns out after 2-3 bad-copy clients</li>
+  <li>$50 ACV clients (Aakash) don't pencil — we'd need to refuse them</li>
+  <li>Per-client domain provisioning has 4-6 week lead time</li>
+  <li>"We eat blame regardless" structural reality</li>
+  <li>Competitors (Belkins, Cognism, hundreds of agencies) already do this — AI doesn't fully differentiate</li>
+</ul></div>
+</div>
+
+<p><strong>Verdict (v3):</strong> Most plausible model. Closer to validated now with Aakash's $2K paid. Required next steps:</p>
+<ul class="std">
+  <li>Get InspectMind reply rate &gt; 1% to validate top-decile chops</li>
+  <li>Sign 2nd client in next 30 days at $2K+ retainer</li>
+  <li>Build the Slack bot for Stage 9 to test 50%+ time reduction</li>
+  <li>Refuse the next $50-ACV client that comes through</li>
+</ul>
+</div>
+
+<div class="wedge risky">
+<span class="tag">⚠️ Probably doesn't work</span>
+<h3>Wedge B — Mailbox-as-a-Service infrastructure</h3>
+<p>Rent capacity on Skylarq's pre-warmed 40-mailbox pool. Other agencies bring their own copy + leads.</p>
+<p><strong>Verdict:</strong> shared-reputation risk + thin margins + entrenched competitors (Smartlead, Mailwarm). Set aside until validated by inbound demand.</p>
+</div>
+
+<div class="wedge risky">
+<span class="tag">⚠️ Feature, not company</span>
+<h3>Wedge C — Reply Triage AI</h3>
+<p>Classifier for cold email replies. Build it for internal use. Maybe ship as free OSS.</p>
+<p><strong>Verdict:</strong> Smartlead/Instantly will bundle this for free within 12 months. Don't build a company around it.</p>
+</div>
+</section>
+
+<section id="cardinal">
+<h2><span class="num">13</span> Cardinal benchmark — the most relevant comparable</h2>
+
+<p>Surfaced repeatedly in the May 12 standup as the model Wedge A should imitate.</p>
+
+<div class="sidebar-box">
+<h4>What Cardinal does (per Jack's standup observations)</h4>
+<ul class="std">
+  <li><strong>$2K/month base fee</strong> — that's it. Floor, not premium.</li>
+  <li><strong>20-30 clients total</strong> — manageable concurrent scale</li>
+  <li><strong>Customer reviews uniformly positive</strong> — they deliver</li>
+  <li><strong>Strong copy opinion</strong> — they have a point of view and stick to it. Refuse client direction that doesn't fit their playbook.</li>
+  <li><strong>Modular scope</strong> — "$X for this campaign, anything else is additional"</li>
+  <li><strong>The $2K floor IS their client filter</strong> — by-default selects for companies with VC money or revenue. Random Guangdong founder can't afford them. Top-decile founders can.</li>
+</ul>
+</div>
+
+<h3>What we'd need to copy from Cardinal</h3>
+<ol class="std">
+  <li><strong>Set the $2K floor and refuse below it.</strong> Even Aakash should have been on a different price track given his $50 ACV.</li>
+  <li><strong>Develop a copy point-of-view we won't compromise.</strong> The 4-round Aakash iteration was us being yes-man. Cardinal would have refused some of his asks.</li>
+  <li><strong>Scope hard.</strong> "This conference, this audience, this cadence — anything else is additional engagement."</li>
+  <li><strong>Cap concurrent clients to what Phillip can serve at quality.</strong> Cardinal at 20-30 is the upper bound; we should target 3-5 in next 6 months.</li>
+</ol>
+
+<div class="callout real">
+<h5>The Jack quote that matters</h5>
+<p><em>"If we are so confident that our institutional knowledge can drive better results, we just don't allow people to even touch the copy that we write. We're like, 'this is going to be working out better for you.' And we measure us by the end results, which is the true outcome-based pricing thing."</em></p>
+<p>That's the discipline we'd need to develop. We didn't have it for Aakash.</p>
+</div>
+</section>
+
+<section id="blame">
+<h2><span class="num">14</span> What we eat blame for regardless</h2>
+
+<p>Structural reality of agency work, surfaced in the May 12 standup. Worth surfacing as its own section because it shapes SOW design.</p>
+
+<p>For the Aakash engagement, Phillip pushed back explicitly on several copy decisions Aakash insisted on:</p>
+<ul class="std">
+  <li>Pitchy E1 with discount code (Aakash's v12) — Phillip advised softer warm-context opener; Aakash wanted pitch</li>
+  <li>"For development teams" generic E4 fallback for "other" segment — Phillip flagged segment-mismatch risk; Aakash deferred but then asked us to add generic copy later (we did)</li>
+  <li>Aakash's $50 ACV model — Phillip's standup observation: <em>"why is he using that? I don't understand. The fuck. What are you doing man?"</em> But we took the engagement at his pricing logic anyway</li>
+</ul>
+
+<div class="callout">
+<h5>The structural problem</h5>
+<p>When conversion misses, the client doesn't say "I made the call against your advice." The client says "you didn't deliver." Phillip standup: <em>"It doesn't matter what — we're going to take the blame for it even if HE fucked that up. He's like, 'oh, you guys didn't convert anything for me.' Like, he's going to say that."</em></p>
+</div>
+
+<h3>Defensive moves to add to SOW</h3>
+<ol class="std">
+  <li><strong>Every disputed decision in writing</strong> — Slack DM with "you asked X, I recommended Y, you confirmed X anyway." Linked from the SOW.</li>
+  <li><strong>Conversion benchmarks set upfront</strong> — "expected reply rate at standard quality is 1-3%. Below that, we investigate. Below 0.5%, we re-engage on copy direction."</li>
+  <li><strong>Client-facing dashboard</strong> — Aakash sees the same numbers we see. No surprise at end-of-engagement.</li>
+  <li><strong>Out-clause for client copy override</strong> — "if you override our copy recommendations against our advice, conversion miss is not refundable." Hard but necessary.</li>
+</ol>
+</section>
+
+<section id="ai-dependency">
+<h2><span class="num">15</span> AI capability dependency — the underlying bet</h2>
+
+<p>Standup observation worth surfacing as an underlying assumption.</p>
+
+<div class="callout real">
+<h5>Jack's framing</h5>
+<p><em>"If you were to do this pre-2025 where agents are fucking stupid and retarded, I just don't think they can do any of this. There's no way Phillip will be able to operate this business executionally in a matter of days and handle his requests and responses in 30 minutes to an hour. For 5,000 people that we're reaching out to. So in a sense, our idea is kind of timely."</em></p>
+</div>
+
+<p>The whole Skylarq thesis depends on Claude Code at <strong>current</strong> capability level. Pre-2025 this business did not exist (or required 10-20x the human labor and was therefore a non-starter).</p>
+
+<h3>Scenarios</h3>
+<ul class="std">
+  <li><strong>If Claude stagnates:</strong> Stage 9 cannot be mechanized further. We stay agency-scale. ~3-5 concurrent clients max. Lifestyle business.</li>
+  <li><strong>If Claude advances 2x in 12 months:</strong> Stage 9 partially mechanizes (Slack bot for client iteration becomes viable). Concurrent client capacity rises to ~10. Real business emerges.</li>
+  <li><strong>If Claude advances 10x in 12 months:</strong> Most of the 20 stages collapse to "AI agent run." Skylarq becomes infrastructure for agencies, not the agency itself. Different business shape entirely.</li>
+</ul>
+
+<p><strong>Underlying bet:</strong> Claude advances faster than the agency market consolidates. If we're right, Skylarq has 12-18 months of "AI-leveraged agency" window before the model commoditizes. We need to either lock in Wedge A revenue during that window OR pivot to infrastructure before the window closes.</p>
+</section>
+
+<section id="scope">
+<h2><span class="num">16</span> Scope we are NOT addressing</h2>
+
+<p>Explicit scope discipline from the standup. The current Wedge A covers ONE channel:</p>
+
+<ul class="std">
+  <li><strong>Email only.</strong> No LinkedIn. No Twitter. No phone. No SMS. No WhatsApp.</li>
+  <li><strong>Cold outbound only.</strong> No inbound nurture, no lead scoring of existing pipeline, no event management.</li>
+  <li><strong>Conference-attendee leads only</strong> (for the InspectMind case). Generalizes to "client-provided lead list" but not to "we generate the lead universe from scratch."</li>
+  <li><strong>English language only.</strong> No multi-lingual support.</li>
+  <li><strong>US-targeted only.</strong> No EU GDPR-compliance work, no APAC localization.</li>
+</ul>
+
+<div class="callout">
+<h5>Why this matters</h5>
+<p>Phillip standup: <em>"We're only doing it on emails. There's no LinkedIn, no Twitter. There's a whole 20 steps that's just this one channel."</em></p>
+<p>Expanding scope = expanding the surface area of bugs, infra costs, and client-iteration time. Wedge A wins by doing email-outbound at top-decile quality before expanding. Every new channel adds another ~10 stages of workflow + 1-2x the infra cost.</p>
+</div>
+</section>
+
+<section id="convergence">
+<h2><span class="num">17</span> 3-ideas convergence (Mudit's observation)</h2>
+
+<p>Sidebar acknowledgment. Mudit's standup observation that three apparent product directions converge into one:</p>
+
+<ol class="std">
+  <li><strong>GTM workflow (this doc):</strong> find leads → outbound → track replies → close</li>
+  <li><strong>Customer OS / knowledge graph:</strong> capture all interactions → unified context per client → query via UI or AI</li>
+  <li><strong>Customer voice / data labeling:</strong> aggregate conversational data → derive insights → sell back to operators</li>
+</ol>
+
+<p>Mudit's read: <em>"These three things are basically — you're finding the people you're trying to talk to. You're recording the things. You're drafting the copy to reach out. You're recording all of the interactions historically, and then you're tracking them using some sort of agentic CRM. This is basically what everything is within these three verticals. We're just trying different iterations and manifestations of each."</em></p>
+
+<div class="callout info">
+<h5>How this doc handles convergence</h5>
+<p>This document focuses on GTM workflow (idea #1) only. Customer OS and customer voice are tracked separately. Convergence is acknowledged but not pursued in this doc — premature integration would dilute our learnings on each piece.</p>
+<p>If GTM Wedge A validates in next 60 days (2nd client at $2K+, reply rate &gt; 1%), then the Customer OS layer becomes the natural up-sell ("we'll handle the followup and the knowledge graph"). If GTM fails to validate, Customer OS becomes the standalone pivot.</p>
+</div>
+</section>
+
+<section id="unknowns">
+<h2><span class="num">18</span> What we still don't know</h2>
+<ol class="std">
+  <li><strong>Will Aakash come back for next conference?</strong> THE success metric. Jack hypothesis: no (this was just residue of existing relationship). Phillip hypothesis: yes (he's already proposed separate cold outbound work).</li>
+  <li><strong>InspectMind's reply rate over the 2-4 week campaign window.</strong> Day-1 was 0.5% CTR / 0 conversions. Real read in 2-3 weeks.</li>
+  <li><strong>InspectMind's upload conversion via Aakash's PostHog.</strong> Email open ≠ click ≠ visit ≠ upload. Funnel data lives on his side.</li>
+  <li><strong>Can a Slack bot handle 60-80% of Stage 9?</strong> Jack's hypothesis. Untested. Worth a 2-week R&D experiment.</li>
+  <li><strong>Are AISDR tools (deep research + copy gen) actually competitive with Jack's custom pipeline?</strong> Mudit suggested A/B test. Untested.</li>
+  <li><strong>Domain reputation degradation rate</strong> under stress — Phillip estimates 2-3 bad-copy client cycles. Concrete measurement TBD.</li>
+  <li><strong>Real per-tool monthly costs</strong> for EXA, Apollo, Findymail, Linkup. No Gmail receipts found.</li>
+  <li><strong>Does conference-attendance personalization actually outperform generic cold?</strong> Phillip's hypothesis. Untested vs control.</li>
+  <li><strong>Can we sign a 2nd client at $2K+ retainer in next 30 days?</strong> Existential.</li>
+  <li><strong>Whether we can find a second Phillip</strong> — or whether we accept that Wedge A caps at 3-5 concurrent clients for the foreseeable.</li>
+  <li><strong>YC RFS 2026 framing</strong> — "vertical company OS" or "AI-leveraged agency"? Investor will read very differently.</li>
+</ol>
+</section>
+
+<section id="dont">
+<h2><span class="num">19</span> What NOT to do</h2>
+<div class="dont-list">
+<h4>Hard nos (expanded post-standup)</h4>
+<ol>
+  <li><strong>Don't build "AI SDR" / email-writing SaaS.</strong> The AISDR LinkedIn graveyard is real.</li>
+  <li><strong>Don't sell to enterprise sales teams.</strong> They have Outreach + SDR orgs.</li>
+  <li><strong>Don't promise inbox placement or reply guarantees.</strong> Our own 0.28% baseline can't credibly back guarantees.</li>
+  <li><strong>Don't spread thin across verticals.</strong> Pick AEC + M&A advisors (our best-performing). Own those before expanding.</li>
+  <li><strong>Don't try to productize Stage 9.</strong> It WILL fail. Treat as service labor or mechanize incrementally via Slack bot.</li>
+  <li><strong>Don't take more clients than Phillip can do Stage 9 for.</strong> Ceiling is ~3 concurrent.</li>
+  <li><strong>Don't tell investors we're SaaS.</strong> We're an AI-leveraged service business. Pitch accordingly or don't pitch.</li>
+  <li><strong>NEW · Don't be yes-man on copy decisions.</strong> Cardinal refuses client direction that hurts conversion. We need that discipline. Even Aakash should have heard "no" more than he did.</li>
+  <li><strong>NEW · Don't take clients with ACV &lt; $5K</strong> on outcome-based pricing. The math doesn't pencil. Aakash at $50 ACV was a mistake we now learn from.</li>
+  <li><strong>NEW · Don't use Skylarq's own warmed pool for clients with bad copy.</strong> Burns our reputation. Custom domains per client mandatory at scale.</li>
+  <li><strong>NEW · Don't email the same lead within 1 month.</strong> TAM exhaustion is real.</li>
+  <li><strong>NEW · Don't promise unlimited emails.</strong> Vishal-abuse pattern. Use per-email-inbox pricing as natural cap.</li>
+  <li><strong>NEW · Don't use Skylarq sender personas (alex/jack/phil/sarah) for client-facing at scale.</strong> Mismatch with client's signature line is uncanny.</li>
+</ol>
+</div>
+</section>
+
+<section id="recommendation">
+<h2><span class="num">20</span> Honest recommendation (v3)</h2>
+
+<div class="callout real">
+<h5>The next 30 days</h5>
+<p><strong>Goal:</strong> validate whether InspectMind's reply rate clears 0.5% AND sign a 2nd client at $2K+ retainer. If both happen, Wedge A is real. If neither, we re-evaluate.</p>
+</div>
+
+<h3>Specific actions (post-standup)</h3>
+<ol class="std">
+  <li><strong>Track InspectMind daily.</strong> Open rate, reply rate, upload conversion (PostHog), spam complaints.</li>
+  <li><strong>Track Phillip-hours by stage</strong> on next engagement. Fill in the time-per-step column with REAL data, not estimates.</li>
+  <li><strong>Sign a 2nd pilot client at $2-5K/mo retainer.</strong> Use Cardinal's $2K floor as the filter. Find via Phillip's network or LinkedIn warm outreach.</li>
+  <li><strong>Build the Stage 9 Slack bot experiment.</strong> Even a basic prototype that handles "version-X-vs-version-Y diff explanation" would reduce iteration time. Jack to scope.</li>
+  <li><strong>Test AISDR competitive landscape.</strong> Mudit suggested. Try Outboundly / Apollo AI / Smartwriter against Jack's custom pipeline. 2-week eval.</li>
+  <li><strong>Document Cardinal's playbook in detail.</strong> Reverse-engineer their service shape from public material. Research item.</li>
+  <li><strong>If reply rate &gt; 1% by week 2 on InspectMind:</strong> push hard on 2nd client. We've validated top-decile chops.</li>
+  <li><strong>If reply rate &lt; 0.5% by week 2:</strong> hard pause new client work. 2-week forensic: ICP, offer, copy. Likely the issue is offer/ICP not copy.</li>
+  <li><strong>Add defensive SOW clauses</strong> per "What we eat blame for" section. Get every disputed client decision in writing.</li>
+  <li><strong>Don't pitch YC until 2 successful engagements.</strong> One client is anecdote. Two is pattern.</li>
+</ol>
+
+<h3>Success at Day 30 (updated)</h3>
+<ul class="std">
+  <li>InspectMind reply rate clears 0.5% (≥43 replies on 8,635 sends)</li>
+  <li>At least 3 attributable uploads on inspectmind.ai (via PostHog utm_source=ULISpring)</li>
+  <li><strong>2nd pilot client signed at $2K+/mo retainer</strong></li>
+  <li>Time-per-step data filled in for at least one full engagement</li>
+  <li>Aakash explicit "will use again for next conference"</li>
+  <li>Slack bot experiment running, ≥30% Stage 9 time reduction proven</li>
+</ul>
+
+<h3>Failure at Day 30 (updated)</h3>
+<ul class="std">
+  <li>InspectMind &lt; 0.3% reply rate AND domain reputation degraded</li>
+  <li>0 attributable uploads</li>
+  <li>Aakash silent / no second engagement</li>
+  <li>0 new clients signed</li>
+  <li>Stage 9 time reduction experiment failed</li>
+  <li>→ Wedge A invalidated. Re-evaluate (Customer OS pivot, infrastructure-only play, or close down).</li>
+</ul>
+</section>
+
+<section id="tools">
+<h2><span class="num">21</span> Tool stack (with real costs)</h2>
+<table>
+<thead><tr><th>Tool</th><th>Role</th><th class="num">$/mo</th><th>Confidence</th></tr></thead>
+<tbody>
+<tr><td>Anthropic Claude Max 20x</td><td>Copy, scripts, automation</td><td class="num">$200</td><td class="good">Confirmed</td></tr>
+<tr><td>Instantly.ai Hypergrowth</td><td>Email send + warmup + sequences</td><td class="num">$97</td><td class="good">Confirmed</td></tr>
+<tr><td>Zoho Mail (40 mailboxes)</td><td>Mailbox hosting</td><td class="num">~$40-120</td><td class="warn">Estimated</td></tr>
+<tr><td>8 domains (Skylarq pool)</td><td>Sender domains</td><td class="num">~$10-15</td><td class="warn">Annual $10-20 each</td></tr>
+<tr><td>Per-client domain pool (NEW)</td><td>Custom domains per engagement</td><td class="num">~$100-200</td><td class="warn">Per engagement</td></tr>
+<tr><td>Linkup API</td><td>LinkedIn DM channel</td><td class="num">~$50-100</td><td class="warn">Credits-based</td></tr>
+<tr><td>EXA</td><td>Web search / signals</td><td class="num">Unknown</td><td class="bad">No receipts</td></tr>
+<tr><td>Apollo</td><td>Enrichment / breadth</td><td class="num">Unknown</td><td class="bad">Free or paid?</td></tr>
+<tr><td>Findymail</td><td>Email verification</td><td class="num">Unknown</td><td class="bad">No receipts</td></tr>
+<tr><td>PostHog (client-side)</td><td>inspectmind.ai funnel tracking</td><td class="num">$0</td><td class="warn">Free tier</td></tr>
+<tr><td>AISDR competitive eval (TBD)</td><td>Test Outboundly / Apollo AI / Smartwriter</td><td class="num">TBD</td><td class="bad">2-week eval planned</td></tr>
+<tr><th>Total minimum confirmed</th><th></th><th class="num">$297</th><th></th></tr>
+<tr><th>Total all-in (incl. per-client domains)</th><th></th><th class="num">~$500-900</th><th></th></tr>
+</tbody>
+</table>
+</section>
+
+<section id="artifacts">
+<h2><span class="num">22</span> Raw artifacts (for reference)</h2>
+<table>
+<thead><tr><th>Artifact</th><th>Location</th></tr></thead>
+<tbody>
+<tr><td><strong>This document (v3, post-standup)</strong></td><td><code>~/Desktop/Skylarq Outbound/site/index.html</code></td></tr>
+<tr><td>v2 (the version this updates)</td><td>(overwritten — git history if needed)</td></tr>
+<tr><td>v1 markdown (original draft Phillip critiqued)</td><td><code>~/Desktop/Skylarq Outbound/docs/09 GTM Workflow Meta-Analysis.md</code></td></tr>
+<tr><td>May 12 standup transcript</td><td>(in conversation history — Phillip + Jack + Mudit)</td></tr>
+<tr><td>InspectMind Doc (Methodology + Sample Emails + Open Questions)</td><td>Google Doc <code>1yFjbMI7eHQDaPZb8TET3Ux7TyjOf2wtgSUQ8cH6Vuss</code></td></tr>
+<tr><td>InspectMind Send List + Tier 1 Review</td><td>Google Sheet <code>1O7fKV8k3EkeLkGCuOMM3QE-sjsq1xnCvPd4TPOHhSes</code></td></tr>
+<tr><td>Skylarq Live Tracker (daily metrics)</td><td>Google Sheet <code>1gEsR1f3pTX5OMtU9OKGJLFBtlFD07J9D7oPOl58FChw</code></td></tr>
+<tr><td>v12 templates (LIVE)</td><td>generated per-lead via API; reference: <code>/tmp/v11_templates.py</code> baseline</td></tr>
+<tr><td>InspectMind final corpus</td><td><code>/tmp/full_personalized_v4.csv</code></td></tr>
+<tr><td>Skylarq doc folder (8 docs)</td><td><code>~/Desktop/Skylarq Outbound/docs/</code></td></tr>
+<tr><td>QA framework</td><td><code>~/skylarq-qa.py</code></td></tr>
+<tr><td>Reply classifier</td><td><code>~/skylarq-classify-replies.py</code></td></tr>
+<tr><td>Cron jobs (3 active)</td><td><code>~/Library/LaunchAgents/com.skylarq.*.plist</code></td></tr>
+<tr><td>Instantly analytics dump</td><td><code>/tmp/instantly_analytics_full.json</code></td></tr>
+<tr><td>Time-per-step worksheet (TODO)</td><td>To be created — track on next engagement</td></tr>
+<tr><td>Cardinal playbook research (TODO)</td><td>To be created — reverse-engineer from public material</td></tr>
+<tr><td>AISDR competitive eval (TODO)</td><td>To be created — 2-week eval planned</td></tr>
+</tbody>
+</table>
+
+<p style="margin-top:48px;color:var(--text-3);font-size:13px;text-align:center;padding-top:32px;border-top:1px solid var(--border)">
+v3 · 2026-05-12 · post-standup with Jack + Mudit · brutal as requested · update when InspectMind hits day-14 metrics
+</p>
+</section>
+
+</main>
+</div>
+</div>
+
+<script>
+function showTab(e, id) {
+  e.target.parentElement.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  e.target.classList.add('active');
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('nav a[href^="#"]');
+function highlightNav() {
+  let current = '';
+  sections.forEach(s => { if (window.scrollY >= s.offsetTop - 100) current = s.id; });
+  navLinks.forEach(l => {
+    l.style.color = ''; l.style.background = '';
+    if (l.getAttribute('href') === '#' + current) {
+      l.style.color = 'var(--accent)'; l.style.background = 'var(--bg-3)';
+    }
+  });
+}
+window.addEventListener('scroll', highlightNav);
+highlightNav();
+
+// Password gate
+const GATE_HASH = "1a1e61a092638d456e92a7d32fae5760b10607ae40a23c80446ea8cffdf7f332"; // sha256 of correct password
+async function sha256(s) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+async function checkPassword(e) {
+  if (e) e.preventDefault();
+  const v = document.getElementById("gate-input").value;
+  const h = await sha256(v);
+  if (h === GATE_HASH) {
+    sessionStorage.setItem("gate-unlocked", "1");
+    document.getElementById("gate").style.display = "none";
+    document.getElementById("content").style.display = "block";
+  } else {
+    document.getElementById("gate-error").textContent = "Incorrect.";
+    document.getElementById("gate-input").value = "";
+  }
+  return false;
+}
+if (sessionStorage.getItem("gate-unlocked") === "1") {
+  document.getElementById("gate").style.display = "none";
+  document.getElementById("content").style.display = "block";
+}
+</script>
+</body>
+</html>
