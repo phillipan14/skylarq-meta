@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Internal</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0a0a0b; --bg-2: #131316; --bg-3: #1a1a1f; --bg-4: #22222a; --border: #2a2a31;
+  --text: #e8e8ea; --text-2: #a0a0a8; --text-3: #6b6b75;
+  --accent: #e3a86c; --accent-2: #d97757;
+  --green: #5fb878; --yellow: #d4a843; --red: #d05e5e; --blue: #6ba8d4;
+}
+body { font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; font-size: 14px; padding: 24px 32px; max-width: 1500px; margin: 0 auto; }
+
+h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 4px; }
+h1 .sub { display: block; font-size: 14px; font-weight: 500; color: var(--text-2); margin-top: 8px; }
+h2 { font-size: 22px; font-weight: 700; margin: 40px 0 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border); display: flex; align-items: baseline; gap: 12px; }
+h2 .badge { background: var(--accent); color: var(--bg); font-size: 11px; padding: 4px 10px; border-radius: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+h3 { font-size: 13px; font-weight: 700; margin: 16px 0 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); }
+.lede { color: var(--text-2); margin-bottom: 20px; max-width: 900px; }
+
+.panel { background: var(--bg-2); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+.panel.green-edge { border-left: 3px solid var(--green); }
+.panel.red-edge { border-left: 3px solid var(--red); }
+.panel.accent-edge { border-left: 3px solid var(--accent); }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+.grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; }
+
+/* Number inputs */
+.num-input { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px dashed var(--border); }
+.num-input:last-child { border-bottom: none; }
+.num-input label { color: var(--text-2); font-size: 13px; }
+.num-input label .hint { display: block; color: var(--text-3); font-size: 11px; margin-top: 2px; }
+.num-input input[type=number] {
+  background: var(--bg); border: 1px solid var(--border); color: var(--text);
+  padding: 8px 12px; border-radius: 6px; font-family: "JetBrains Mono", monospace;
+  width: 110px; text-align: right; font-size: 14px; font-weight: 600;
+}
+.num-input input[type=number]:focus { outline: none; border-color: var(--accent); }
+.num-input input[type=text] {
+  background: var(--bg); border: 1px solid var(--border); color: var(--text);
+  padding: 8px 12px; border-radius: 6px;
+  width: 180px; font-size: 13px;
+}
+
+/* Campaign rows table */
+.campaign-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+.campaign-table th, .campaign-table td { padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--border); }
+.campaign-table th { background: var(--bg-3); color: var(--text-2); font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+.campaign-table th:first-child, .campaign-table td:first-child { text-align: left; }
+.campaign-table input { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 6px 8px; border-radius: 4px; font-family: inherit; font-size: 13px; }
+.campaign-table input[type=number] { width: 90px; text-align: right; font-family: "JetBrains Mono", monospace; }
+.campaign-table input[type=text] { width: 160px; }
+.campaign-table .calc { font-family: "JetBrains Mono", monospace; color: var(--accent); font-weight: 600; }
+.campaign-table .row-btn {
+  background: var(--bg-3); border: 1px solid var(--border); color: var(--red);
+  padding: 4px 10px; border-radius: 4px; cursor: pointer; font-family: inherit; font-size: 12px;
+}
+.campaign-table .row-btn:hover { background: var(--red); color: var(--bg); border-color: var(--red); }
+
+.add-btn {
+  margin-top: 12px; background: var(--accent); color: var(--bg); border: none;
+  padding: 8px 18px; border-radius: 6px; cursor: pointer; font-family: inherit;
+  font-size: 13px; font-weight: 600;
+}
+.add-btn:hover { background: var(--accent-2); }
+
+/* Result cards — big numbers */
+.result-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin: 20px 0; }
+.result-card { background: var(--bg-2); border: 1px solid var(--border); border-radius: 10px; padding: 24px; }
+.result-card .lbl { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+.result-card .v { font-size: 36px; font-weight: 800; font-family: "JetBrains Mono", monospace; letter-spacing: -0.02em; color: var(--accent); }
+.result-card .sub-v { font-size: 13px; color: var(--text-2); margin-top: 6px; font-family: "JetBrains Mono", monospace; }
+.result-card.revenue { border-left: 4px solid var(--blue); }
+.result-card.revenue .v { color: var(--blue); }
+.result-card.cost { border-left: 4px solid var(--red); }
+.result-card.cost .v { color: var(--red); }
+.result-card.margin { border-left: 4px solid var(--green); }
+.result-card.margin .v { color: var(--green); }
+.result-card.margin.thin .v { color: var(--yellow); }
+.result-card.margin.bad .v { color: var(--red); }
+
+/* Margin gauge bar */
+.gauge { background: var(--bg-3); border-radius: 8px; padding: 16px 20px; margin: 16px 0; }
+.gauge .gbar-bg { background: var(--bg); height: 32px; border-radius: 4px; position: relative; overflow: hidden; }
+.gauge .gbar-fill { height: 100%; background: linear-gradient(90deg, var(--red) 0%, var(--yellow) 35%, var(--green) 50%); transition: width 0.2s; border-radius: 4px; position: relative; }
+.gauge .gbar-tick { position: absolute; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,0.25); }
+.gauge .gbar-label { display: flex; justify-content: space-between; margin-top: 8px; font-size: 11px; color: var(--text-3); }
+.gauge .gbar-marker { position: absolute; top: -4px; bottom: -4px; width: 4px; background: white; border-radius: 2px; transition: left 0.2s; box-shadow: 0 0 6px rgba(255,255,255,0.6); }
+
+/* Cost stack bar */
+.stack { display: flex; height: 32px; border-radius: 6px; overflow: hidden; margin: 12px 0; background: var(--bg-3); }
+.stack-seg { display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--bg); font-family: "JetBrains Mono", monospace; transition: width 0.2s; }
+.stack-seg.labor { background: var(--accent); }
+.stack-seg.overhead { background: var(--blue); }
+.stack-seg.profit { background: var(--green); }
+
+/* Detail breakdown */
+.detail-row { display: grid; grid-template-columns: 1fr auto; padding: 6px 0; border-bottom: 1px dashed var(--border); font-size: 13px; }
+.detail-row:last-child { border-bottom: none; }
+.detail-row .label { color: var(--text-2); }
+.detail-row .val { font-family: "JetBrains Mono", monospace; font-weight: 600; }
+.detail-row .val.accent { color: var(--accent); }
+.detail-row .val.green { color: var(--green); }
+.detail-row .val.red { color: var(--red); }
+.detail-row .val.warn { color: var(--yellow); }
+
+/* Sensitivity matrices */
+.matrix { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 12px; }
+.matrix th, .matrix td { padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--border); font-family: "JetBrains Mono", monospace; }
+.matrix th { background: var(--bg-3); color: var(--text-2); font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+.matrix th:first-child, .matrix td:first-child { text-align: left; }
+.matrix td .pct { font-weight: 700; }
+.matrix td .amt { display: block; font-size: 10px; color: var(--text-3); font-weight: 400; margin-top: 1px; }
+
+.c-walk { background: rgba(208,94,94,0.28); }
+.c-walk .pct { color: var(--red); }
+.c-thin { background: rgba(208,94,94,0.12); }
+.c-thin .pct { color: var(--red); }
+.c-mid { background: rgba(212,168,67,0.15); }
+.c-mid .pct { color: var(--yellow); }
+.c-good { background: rgba(95,184,120,0.15); }
+.c-good .pct { color: var(--green); }
+.c-best { background: rgba(95,184,120,0.32); border: 1px solid var(--green); }
+.c-best .pct { color: var(--green); }
+
+.matrix td.clickable { cursor: pointer; transition: transform 0.1s, box-shadow 0.1s; }
+.matrix td.clickable:hover { transform: scale(1.05); box-shadow: 0 0 0 2px var(--accent); z-index: 1; position: relative; }
+.matrix td.selected { box-shadow: 0 0 0 3px var(--accent) inset; position: relative; }
+.matrix td.selected::after { content: "◆"; position: absolute; top: 2px; right: 4px; color: var(--accent); font-size: 10px; }
+
+/* Locked row/column propagation visuals — when you pick $X/inbox in one matrix, every other matrix highlights the $X row */
+.matrix tr.locked-row > th:first-child { background: var(--accent); color: var(--bg); font-weight: 700; }
+.matrix tr.locked-row > td { border-top: 1px solid rgba(227,168,108,0.4); border-bottom: 1px solid rgba(227,168,108,0.4); }
+.matrix tr.locked-row > td:not(.selected) { background-color: rgba(227,168,108,0.04); }
+.matrix th.locked-col { background: var(--accent); color: var(--bg); font-weight: 700; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 14px; margin: 10px 0; font-size: 11px; color: var(--text-3); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend .sw { width: 14px; height: 14px; border-radius: 3px; }
+
+.flag { display: inline-block; padding: 5px 12px; border-radius: 14px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; }
+.flag.ok { background: rgba(95,184,120,0.2); color: var(--green); }
+.flag.thin { background: rgba(212,168,67,0.2); color: var(--yellow); }
+.flag.walk { background: rgba(208,94,94,0.2); color: var(--red); }
+
+.tier-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+.tier-card { background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; padding: 18px; position: relative; cursor: pointer; transition: all 0.15s; }
+.tier-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+.tier-card.recommended { border-color: var(--accent); box-shadow: 0 0 0 1px rgba(227,168,108,0.3); }
+.tier-card.active { border-color: var(--green); box-shadow: 0 0 0 2px var(--green) inset; }
+.tier-card.active::after { content: "● ACTIVE"; position: absolute; top: 8px; right: 10px; font-size: 9px; color: var(--green); font-weight: 700; letter-spacing: 0.04em; }
+.tier-card .tier-name { font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-2); margin-bottom: 8px; font-weight: 700; }
+.tier-card .tier-price { font-size: 24px; font-weight: 800; font-family: "JetBrains Mono", monospace; color: var(--accent); margin-bottom: 2px; }
+.tier-card .tier-monthly { font-size: 11px; color: var(--text-3); margin-bottom: 10px; font-family: "JetBrains Mono", monospace; }
+.tier-card .tier-margin { font-size: 13px; color: var(--green); margin-bottom: 12px; font-weight: 600; }
+.tier-card .tier-margin.thin { color: var(--yellow); }
+.tier-card .tier-margin.bad { color: var(--red); }
+.tier-card .tier-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; font-size: 11px; color: var(--text-2); margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed var(--border); }
+.tier-card .tier-stats span:nth-child(even) { font-family: "JetBrains Mono", monospace; color: var(--text); text-align: right; }
+.tier-card .tier-spec { font-size: 11px; color: var(--text-3); line-height: 1.5; }
+.tier-card.recommended::before { content: "RECOMMENDED DEFAULT"; position: absolute; top: -8px; left: 14px; background: var(--accent); color: var(--bg); padding: 3px 8px; border-radius: 4px; font-size: 9px; font-weight: 700; letter-spacing: 0.06em; }
+
+footer { text-align: center; color: var(--text-3); font-size: 11px; margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); }
+
+/* Client-facing proposal generator */
+.proposal-panel {
+  background: linear-gradient(145deg, rgba(227,168,108,0.04) 0%, rgba(95,184,120,0.04) 100%);
+  border: 1px solid var(--accent);
+  border-radius: 14px;
+  padding: 36px 40px;
+  margin: 24px 0;
+  position: relative;
+}
+.proposal-panel::before {
+  content: "📄 CLIENT-FACING · safe to share";
+  position: absolute; top: -10px; left: 24px;
+  background: var(--accent); color: var(--bg);
+  padding: 4px 12px; border-radius: 6px;
+  font-size: 10px; font-weight: 800; letter-spacing: 0.06em;
+}
+.proposal-panel h3 { color: var(--accent); margin-top: 20px; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); font-size: 12px; }
+.proposal-panel h3:first-of-type { margin-top: 8px; }
+.proposal-line { display: grid; grid-template-columns: minmax(200px, 0.45fr) 1fr; gap: 16px; padding: 6px 0; font-size: 14px; }
+.proposal-line .pl-label { color: var(--text-2); }
+.proposal-line .pl-val { font-family: "JetBrains Mono", "Menlo", monospace; color: var(--text); font-weight: 600; }
+.proposal-line.total { padding-top: 14px; margin-top: 8px; border-top: 2px solid var(--accent); font-size: 18px; font-weight: 700; }
+.proposal-line.total .pl-val { color: var(--accent); font-size: 22px; }
+.proposal-included { list-style: none; padding: 0; margin: 8px 0; }
+.proposal-included li { padding: 4px 0 4px 22px; position: relative; font-size: 14px; color: var(--text); }
+.proposal-included li::before { content: "✓"; position: absolute; left: 0; color: var(--green); font-weight: 700; }
+.copy-btn {
+  position: absolute; top: 16px; right: 20px;
+  background: var(--accent); color: var(--bg); border: none;
+  padding: 8px 16px; border-radius: 6px; cursor: pointer;
+  font-family: inherit; font-size: 12px; font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.copy-btn:hover { background: var(--accent-2); }
+.copy-btn.copied { background: var(--green); }
+
+@media (max-width: 900px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .result-grid { grid-template-columns: 1fr; }
+  .tier-grid { grid-template-columns: 1fr; }
+}
+
+/* Password gate */
+.gate-overlay { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+.gate-box { background: var(--bg-2); border: 1px solid var(--border); border-radius: 12px; padding: 40px 48px; max-width: 420px; width: 90%; text-align: center; }
+.gate-box h2 { font-size: 18px; margin: 0 0 8px; padding: 0; border: none; color: var(--accent); display: block; }
+.gate-box p { color: var(--text-3); font-size: 13px; margin-bottom: 24px; }
+.gate-box input { width: 100%; padding: 12px 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: inherit; font-size: 15px; outline: none; }
+.gate-box input:focus { border-color: var(--accent); }
+.gate-box button { width: 100%; margin-top: 12px; padding: 12px; background: var(--accent); color: var(--bg); border: none; border-radius: 6px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.gate-box button:hover { background: var(--accent-2); }
+.gate-error { color: var(--red); font-size: 12px; margin-top: 12px; min-height: 16px; }
+#calc-content { display: none; }
+</style>
+</head>
+<body>
+
+<div class="gate-overlay" id="gate">
+  <div class="gate-box">
+    <h2>Skylarq · internal</h2>
+    <p>Password required to view.</p>
+    <form id="gate-form" onsubmit="return checkPassword(event)">
+      <input type="password" id="gate-input" autofocus placeholder="Password">
+      <button type="submit">Enter</button>
+      <div class="gate-error" id="gate-error"></div>
+    </form>
+  </div>
+</div>
+
+<div id="calc-content">
+
+<h1>Skylarq Pricing Calculator
+  <span class="sub">Type your inputs · see margin in real time · sensitivity grids at bottom</span>
+</h1>
+
+<p class="lede">Build per-campaign send volumes, plug in capacity + pricing assumptions, see the margin gap between what the client pays and what Skylarq actually costs to operate. INTERNAL — never share with clients.</p>
+
+<!-- ╔══════════════════════════════════════════ -->
+<!-- ║ SECTION 1 — INPUTS                       -->
+<!-- ╚══════════════════════════════════════════ -->
+<h2>1 · Inputs <span class="badge">Type values</span></h2>
+
+<div class="grid-2">
+
+  <!-- Campaign builder -->
+  <div class="panel accent-edge">
+    <h3>Campaigns (add a row per active campaign)</h3>
+    <table class="campaign-table" id="campaignTable">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Recipients</th>
+          <th>Emails / recipient</th>
+          <th>Total sends</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="campaignBody"></tbody>
+      <tfoot>
+        <tr>
+          <th>Total</th>
+          <th id="totalRecipients">—</th>
+          <th>—</th>
+          <th id="totalSends">—</th>
+          <th></th>
+        </tr>
+      </tfoot>
+    </table>
+    <button class="add-btn" onclick="addCampaign()">+ Add campaign</button>
+  </div>
+
+  <!-- Engagement scope inputs -->
+  <div class="panel accent-edge">
+    <h3>Engagement scope</h3>
+    <div class="num-input">
+      <label>Engagement length<span class="hint">months campaigns are active</span></label>
+      <input type="number" id="months" value="2" min="1" max="12">
+    </div>
+    <div class="num-input">
+      <label>Setup hours (one-time)<span class="hint">intake + domain/mailbox provisioning + lead sourcing + initial copy + deliverability test</span></label>
+      <input type="number" id="setupHours" value="12" min="0" max="60">
+    </div>
+    <div class="num-input">
+      <label>Hours per campaign<span class="hint">Stage 9 client iteration + monitoring + reply triage · doesn't scale with leads</span></label>
+      <input type="number" id="hoursPerCampaign" value="16" min="0" max="60">
+    </div>
+    <div class="num-input" style="background: var(--bg-3); border-radius: 6px; padding: 12px 16px; margin-top: 4px;">
+      <label style="color: var(--text); font-weight: 600;">Total Phillip-hours (cascaded)<span class="hint" id="philHoursFormula">12 + (2 campaigns × 16) = 44h</span></label>
+      <span class="val" id="philHoursTotal" style="font-family: 'JetBrains Mono', monospace; color: var(--accent); font-weight: 700; font-size: 16px;">44h</span>
+    </div>
+
+    <!-- Operational assumptions (advanced, less prominent) -->
+    <details style="margin-top: 16px; border-top: 1px dashed var(--border); padding-top: 12px;">
+      <summary style="cursor: pointer; color: var(--text-3); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Operational assumptions (rarely change)</summary>
+      <div style="margin-top: 8px;">
+        <div class="num-input">
+          <label>Phillip hourly rate ($, imputed)<span class="hint">cost-basis labor rate · constant</span></label>
+          <input type="number" id="philRate" value="100" min="50" max="300" step="10">
+        </div>
+        <div class="num-input">
+          <label>External quote rate (sends/inbox/day)<span class="hint">safe rate we promise client</span></label>
+          <input type="number" id="extRate" value="30" min="20" max="60">
+        </div>
+        <div class="num-input">
+          <label>Internal real rate (sends/inbox/day)<span class="hint">what we actually run after warmup · margin engine</span></label>
+          <input type="number" id="intRate" value="40" min="20" max="60">
+        </div>
+        <div class="num-input">
+          <label>Inboxes per domain<span class="hint">3 standard, 5 aggressive</span></label>
+          <input type="number" id="inboxesPerDomain" value="3" min="1" max="6">
+        </div>
+        <div class="num-input">
+          <label>Business days per month<span class="hint">M-F = 22 typical</span></label>
+          <input type="number" id="bizDays" value="22" min="20" max="25">
+        </div>
+        <div class="num-input">
+          <label>Per operated mailbox cost ($/mo)<span class="hint">monitoring labor (~10min/mo × hourly rate) + Instantly slot ($2-3) + reputation risk allocation · $25 realistic default · this is THE internal-rate margin engine</span></label>
+          <input type="number" id="perInboxCost" value="25" min="0" max="100">
+        </div>
+        <div class="num-input">
+          <label>Existing warmed mailboxes available<span class="hint">if reusing Skylarq pool (40) or client's existing pool — subtracts from new infra count · default 0 = all new infra</span></label>
+          <input type="number" id="existingMailboxes" value="0" min="0" max="100">
+        </div>
+      </div>
+    </details>
+
+    <!-- Hidden inputs that get set by matrix/tier clicks (so the rest of the code still works) -->
+    <input type="hidden" id="rate" value="250">
+    <input type="hidden" id="setup" value="1500">
+  </div>
+
+</div>
+
+<!-- ╔══════════════════════════════════════════ -->
+<!-- ║ SECTION 4 — SENSITIVITY MATRICES         -->
+<!-- ╚══════════════════════════════════════════ -->
+<h2>2 · Sensitivity analysis <span class="badge">$ + %</span></h2>
+
+<p class="lede" style="margin-bottom: 12px;">Each cell shows <strong>margin % (large)</strong> and <strong>margin $ (small)</strong> at the given rate × variable combo. <strong style="color: var(--accent);">→ Click any cell to lock it as your quote.</strong> The currently-selected cell is outlined with a diamond marker.</p>
+
+<div class="legend" style="margin-bottom: 16px;">
+  <span><div class="sw" style="background: rgba(208,94,94,0.28); border: 1px solid var(--red);"></div>&lt; 30% (walk)</span>
+  <span><div class="sw" style="background: rgba(208,94,94,0.12);"></div>30-40% (thin)</span>
+  <span><div class="sw" style="background: rgba(212,168,67,0.15);"></div>40-50% (acceptable)</span>
+  <span><div class="sw" style="background: rgba(95,184,120,0.15);"></div>50-60% (good)</span>
+  <span><div class="sw" style="background: rgba(95,184,120,0.32); border: 1px solid var(--green);"></div>60%+ (premium)</span>
+</div>
+
+<div class="panel">
+  <h3>Per-inbox rate × Internal send rate</h3>
+  <p style="font-size: 12px; color: var(--text-3); margin-bottom: 12px;">The "internal send rate" is the margin engine. Push from 30→40→50/d → fewer real inboxes operated → bigger phantom-inbox profit.</p>
+  <table class="matrix" id="m1">
+    <thead><tr id="m1-h"></tr></thead>
+    <tbody id="m1-b"></tbody>
+  </table>
+</div>
+
+<div class="panel" style="margin-top: 20px;">
+  <h3>Engagement length × Per-inbox rate</h3>
+  <p style="font-size: 12px; color: var(--text-3); margin-bottom: 12px;">Longer engagements = more setup amortization, slightly better margin %.</p>
+  <table class="matrix" id="m3">
+    <thead><tr id="m3-h"></tr></thead>
+    <tbody id="m3-b"></tbody>
+  </table>
+</div>
+
+<!-- Setup fee 2D sensitivity: # new domains × setup fee -->
+<div class="panel" style="margin-top: 20px;">
+  <h3>Setup fee × # new domains</h3>
+  <p style="font-size: 12px; color: var(--text-3); margin-bottom: 8px;">Setup labor scales with infrastructure provisioned. Highlighted row = your current scope's domain count. The <strong style="color: var(--red);">"Labor cost"</strong> column shows what setup actually COSTS Skylarq at that scale — any setup fee BELOW that is a loss. <strong style="color: var(--accent);">→ Click any cell to lock the setup fee.</strong></p>
+  <p style="font-size: 11px; color: var(--text-3); margin-bottom: 8px;"><strong>How to read it:</strong> "more domains = negative margin at the same fee" is the matrix telling you setup fee MUST scale with infrastructure. For 5 domains, $1,500 setup is fine. For 15 domains, you need $4K+ setup or you're losing money on setup.</p>
+  <p style="font-size: 11px; color: var(--text-3); margin-bottom: 12px;">Setup labor formula: <code>2h base + (1.5h × domains) + (0.2h × mailboxes)</code> · current setup labor cost: <span id="setupLaborCost" style="color: var(--accent); font-family: 'JetBrains Mono', monospace; font-weight: 700;">—</span></p>
+  <table class="matrix" id="setupMatrix">
+    <thead><tr id="setupHeader"></tr></thead>
+    <tbody id="setupBody"></tbody>
+  </table>
+</div>
+
+<!-- ╔══════════════════════════════════════════ -->
+<!-- ║ SECTION 6 — TIER PRESETS                  -->
+<!-- ╚══════════════════════════════════════════ -->
+<h2>3 · Tier presets <span class="badge">Click to lock</span></h2>
+<p class="lede">5 pricing strategies applied to <strong>your current scope</strong>. Each tier defines rate + internal send rate. <strong>Setup fee cascades down from your matrix selection above</strong> — so all 5 tiers share the same setup fee, and you can compare just the recurring monthly pricing approach side-by-side. <strong style="color: var(--accent);">→ Click a tier to load it.</strong> The currently-locked tier shows ● ACTIVE in green.</p>
+
+<div class="tier-grid" id="tierGrid"></div>
+
+<!-- ╔══════════════════════════════════════════ -->
+<!-- ║ SECTION X — LOCKED QUOTE PARAMETERS       -->
+<!-- ╚══════════════════════════════════════════ -->
+<h2>4 · Locked quote <span class="badge">Picked from sensitivity below</span></h2>
+
+<div class="panel" style="margin-bottom: 24px;">
+  <p class="lede" style="margin-bottom: 16px;">These are the two pricing levers — both selected from the sensitivity analysis below. <strong style="color: var(--accent);">Click any cell in the matrices ↓ or a tier preset to update.</strong></p>
+  <div class="grid-2">
+    <div class="panel" style="background: var(--bg-3); border: none; padding: 16px;">
+      <div style="font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px;">$/inbox/month (LOCKED)</div>
+      <div style="font-size: 32px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--accent);" id="lockedRate">$250</div>
+      <div style="font-size: 12px; color: var(--text-3); margin-top: 4px;">↓ change via "rate × internal send rate" matrix below</div>
+    </div>
+    <div class="panel" style="background: var(--bg-3); border: none; padding: 16px;">
+      <div style="font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px;">Setup fee (LOCKED)</div>
+      <div style="font-size: 32px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--accent);" id="lockedSetup">$1,500</div>
+      <div style="font-size: 12px; color: var(--text-3); margin-top: 4px;" id="setupMarginDisplay">— margin on setup —</div>
+    </div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════ -->
+<!-- ║ SECTION 2 — BIG NUMBERS                  -->
+<!-- ╚══════════════════════════════════════════ -->
+<h2>5 · Bottom line <span class="badge">Live</span></h2>
+
+<div class="result-grid">
+  <div class="result-card revenue">
+    <div class="lbl">What client pays (revenue)</div>
+    <div class="v" id="bigRev">—</div>
+    <div class="sub-v" id="bigRevSub">—</div>
+  </div>
+  <div class="result-card cost">
+    <div class="lbl">Skylarq cost basis</div>
+    <div class="v" id="bigCost">—</div>
+    <div class="sub-v" id="bigCostSub">—</div>
+  </div>
+  <div class="result-card margin" id="bigMarginCard">
+    <div class="lbl">Margin · status: <span id="statusFlag"></span></div>
+    <div class="v" id="bigMargin">—</div>
+    <div class="sub-v" id="bigMarginSub">—</div>
+  </div>
+</div>
+
+<!-- Visual: margin gauge -->
+<div class="gauge">
+  <h3 style="margin-top: 0;">Margin gauge (0% → 70%)</h3>
+  <div class="gbar-bg">
+    <div class="gbar-fill" id="gaugeFill" style="width: 0%;"></div>
+    <div class="gbar-tick" style="left: 30%;"></div>
+    <div class="gbar-tick" style="left: 50%;"></div>
+    <div class="gbar-marker" id="gaugeMarker" style="left: 0%;"></div>
+  </div>
+  <div class="gbar-label">
+    <span>0% (walk)</span><span>30% (thin)</span><span>50% (target)</span><span>70%+ (premium)</span>
+  </div>
+</div>
+
+<!-- Visual: cost stack -->
+<div class="panel" style="margin: 16px 0;">
+  <h3>Where the revenue goes</h3>
+  <div class="stack" id="costStack"></div>
+  <div class="legend">
+    <span><div class="sw" style="background: var(--accent);"></div>Skylarq labor (Phillip-hours)</span>
+    <span><div class="sw" style="background: var(--blue);"></div>Overhead (Anthropic + Instantly)</span>
+    <span><div class="sw" style="background: var(--green);"></div>Margin (Skylarq profit)</span>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════ -->
+<!-- ║ SECTION 4 — DETAILED BREAKDOWN            -->
+<!-- ╚══════════════════════════════════════════ -->
+<h2>6 · Breakdown <span class="badge">Detail</span></h2>
+
+<div class="grid-3">
+
+  <div class="panel">
+    <h3>Volume math</h3>
+    <div class="detail-row"><span class="label">Total recipients</span><span class="val accent" id="d-recipients">—</span></div>
+    <div class="detail-row"><span class="label">Avg emails per recipient</span><span class="val" id="d-avgEmails">—</span></div>
+    <div class="detail-row"><span class="label">Total sends</span><span class="val accent" id="d-sends">—</span></div>
+    <div class="detail-row"><span class="label">Sends per month</span><span class="val" id="d-sendsMo">—</span></div>
+    <div class="detail-row"><span class="label">Sends per day (peak)</span><span class="val" id="d-sendsDay">—</span></div>
+  </div>
+
+  <div class="panel green-edge">
+    <h3>Capacity math (what client sees)</h3>
+    <div class="detail-row"><span class="label">External inboxes quoted</span><span class="val accent" id="d-extInboxes">—</span></div>
+    <div class="detail-row"><span class="label">Domains needed for client side</span><span class="val" id="d-domains">—</span></div>
+    <div class="detail-row"><span class="label">Internal inboxes operated</span><span class="val" id="d-intInboxes">—</span></div>
+    <div class="detail-row"><span class="label">Phantom inboxes (efficiency)</span><span class="val green" id="d-phantom">—</span></div>
+    <div class="detail-row"><span class="label">Margin from efficiency alone</span><span class="val green" id="d-effRev">—</span></div>
+  </div>
+
+  <div class="panel">
+    <h3>Money math</h3>
+    <div class="detail-row"><span class="label">Setup fee</span><span class="val" id="d-setup">—</span></div>
+    <div class="detail-row"><span class="label">Monthly bill</span><span class="val" id="d-monthly">—</span></div>
+    <div class="detail-row"><span class="label">Total revenue</span><span class="val accent" id="d-rev">—</span></div>
+    <div class="detail-row"><span class="label">Labor cost (Phillip-h × rate)</span><span class="val" id="d-labor">—</span></div>
+    <div class="detail-row"><span class="label">Overhead allocation</span><span class="val" id="d-overhead">—</span></div>
+    <div class="detail-row"><span class="label">Per-recipient acquisition cost</span><span class="val warn" id="d-perLead">—</span></div>
+    <div class="detail-row"><span class="label">Effective Phillip hourly</span><span class="val green" id="d-effHour">—</span></div>
+  </div>
+
+</div>
+
+<!-- ╔══════════════════════════════════════════ -->
+<!-- ║ CLIENT-FACING PROPOSAL GENERATOR          -->
+<!-- ╚══════════════════════════════════════════ -->
+<h2>7 · Client proposal <span class="badge" style="background: var(--green);">Safe to share</span></h2>
+<p class="lede">Auto-generated from your locked-in selections above. This is what gets shown to the client — no margins, no internal cost basis, no operational mechanics. <strong style="color: var(--accent);">Click "Copy" to grab a paste-ready version for Slack/email.</strong></p>
+
+<div class="proposal-panel">
+  <button class="copy-btn" id="copyProposalBtn" onclick="copyProposal()">📋 Copy proposal</button>
+
+  <h3>Scope</h3>
+  <div class="proposal-line"><span class="pl-label">Active campaigns</span><span class="pl-val" id="pp-campaigns">—</span></div>
+  <div id="pp-campaignList" style="margin: 4px 0 12px;"></div>
+  <div class="proposal-line"><span class="pl-label">Total recipients</span><span class="pl-val" id="pp-recipients">—</span></div>
+  <div class="proposal-line"><span class="pl-label">Avg emails per recipient</span><span class="pl-val" id="pp-emails">—</span></div>
+  <div class="proposal-line"><span class="pl-label">Total sends planned</span><span class="pl-val" id="pp-sends">—</span></div>
+  <div class="proposal-line"><span class="pl-label">Engagement length</span><span class="pl-val" id="pp-months">—</span></div>
+
+  <h3>Dedicated infrastructure</h3>
+  <div class="proposal-line"><span class="pl-label">New sender domains provisioned</span><span class="pl-val" id="pp-domains">—</span></div>
+  <div class="proposal-line"><span class="pl-label">Dedicated mailboxes</span><span class="pl-val" id="pp-inboxes">—</span></div>
+  <div class="proposal-line"><span class="pl-label">Warmup lead time</span><span class="pl-val">4-6 weeks before first send</span></div>
+
+  <h3>Investment</h3>
+  <div class="proposal-line"><span class="pl-label">Setup fee (one-time)</span><span class="pl-val" id="pp-setup">—</span></div>
+  <div class="proposal-line"><span class="pl-label">Monthly rate per mailbox</span><span class="pl-val" id="pp-rate">—</span></div>
+  <div class="proposal-line"><span class="pl-label">Monthly total</span><span class="pl-val" id="pp-monthly">—</span></div>
+  <div class="proposal-line"><span class="pl-label">Engagement length</span><span class="pl-val" id="pp-months2">—</span></div>
+  <div class="proposal-line total"><span class="pl-label">Total engagement cost</span><span class="pl-val" id="pp-total">—</span></div>
+
+  <h3>What's included</h3>
+  <ul class="proposal-included">
+    <li>Lead sourcing + multi-provider email enrichment</li>
+    <li>Per-lead personalization research (firm signals, role context)</li>
+    <li>Multi-segment copy variants per campaign</li>
+    <li>Up to 4 rounds of copy iteration per campaign</li>
+    <li>Sender domain warmup + reputation management</li>
+    <li>Daily delivery monitoring + bounce/spam complaint triage</li>
+    <li>Reply routing to your inbox + classification</li>
+    <li>Weekly performance readouts (sends / opens / replies / conversions)</li>
+    <li>UTM tagging + funnel attribution support</li>
+    <li>CAN-SPAM compliant infrastructure (List-Unsubscribe + physical address footer)</li>
+  </ul>
+</div>
+
+<footer>
+  v3 · 2026-05-12 · INTERNAL · adjust inputs to model new clients · the calculator above is internal, only the section 7 proposal is safe to share with clients
+</footer>
+
+<script>
+// ─── State: campaigns ───
+let campaigns = [
+  { name: "Wave 2 — team-member expansion", recipients: 10000, emails: 3 },
+  { name: "Wave 3 — retail brands", recipients: 2500, emails: 4 },
+];
+
+const $ = id => document.getElementById(id);
+const fmt = n => n.toLocaleString();
+const fmt$ = n => '$' + Math.round(n).toLocaleString();
+const fmtPct = n => (n*100).toFixed(0) + '%';
+
+function renderCampaigns() {
+  const body = $('campaignBody');
+  body.innerHTML = campaigns.map((c, i) => `
+    <tr data-idx="${i}">
+      <td><input type="text" value="${c.name}" oninput="updCamp(${i}, 'name', this.value)"></td>
+      <td><input type="number" value="${c.recipients}" min="0" step="100" oninput="updCamp(${i}, 'recipients', +this.value)"></td>
+      <td><input type="number" value="${c.emails}" min="1" max="10" step="0.5" oninput="updCamp(${i}, 'emails', +this.value)"></td>
+      <td class="calc" data-row-total="${i}">${fmt(c.recipients * c.emails)}</td>
+      <td><button class="row-btn" onclick="rmCamp(${i})">×</button></td>
+    </tr>
+  `).join('');
+  updateCampaignTotals();
+}
+
+function updateCampaignTotals() {
+  // Update each per-row total cell
+  campaigns.forEach((c, i) => {
+    const cell = document.querySelector(`[data-row-total="${i}"]`);
+    if (cell) cell.textContent = fmt(c.recipients * c.emails);
+  });
+  // Update footer totals
+  const totR = campaigns.reduce((s,c)=>s+(c.recipients||0),0);
+  const totS = campaigns.reduce((s,c)=>s+(c.recipients||0)*(c.emails||0),0);
+  $('totalRecipients').textContent = fmt(totR);
+  $('totalSends').textContent = fmt(totS);
+}
+
+function updCamp(i, field, val) {
+  campaigns[i][field] = val;
+  // Update the per-row calc cell + table footer in place (without re-rendering inputs, to preserve focus)
+  updateCampaignTotals();
+  // Then recompute the rest of the page
+  recompute();
+}
+function rmCamp(i) {
+  if (campaigns.length <= 1) return;
+  campaigns.splice(i, 1);
+  renderCampaigns();
+  recompute();
+}
+function addCampaign() {
+  campaigns.push({ name: "New campaign", recipients: 1000, emails: 3 });
+  renderCampaigns();
+  recompute();
+}
+
+function lockCell(updates) {
+  if (updates.rate !== undefined) $('rate').value = updates.rate;
+  if (updates.intRate !== undefined) $('intRate').value = updates.intRate;
+  if (updates.months !== undefined) $('months').value = updates.months;
+  recompute();
+  // Smooth-scroll DOWN to the locked quote + bottom line so user sees the result
+  document.querySelector('h2:nth-of-type(4)').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function lockSetup(s) {
+  $('setup').value = s;
+  recompute();
+  document.querySelector('h2:nth-of-type(4)').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function getOpts() {
+  const setupHrs = +$('setupHours').value;
+  const perCampHrs = +$('hoursPerCampaign').value;
+  const philHours = setupHrs + campaigns.length * perCampHrs;
+  return {
+    months: +$('months').value,
+    bizDays: +$('bizDays').value,
+    extRate: +$('extRate').value,
+    intRate: +$('intRate').value,
+    inboxesPerDomain: +$('inboxesPerDomain').value,
+    perInboxCost: +$('perInboxCost').value,
+    existingMailboxes: +$('existingMailboxes').value || 0,
+    rate: +$('rate').value,
+    setup: +$('setup').value,
+    philRate: +$('philRate').value,
+    philHours,
+    setupHrs,
+    perCampHrs,
+  };
+}
+
+function computeFromInputs(opts, customInboxes, customSends, customMonths, customRate) {
+  const o = opts;
+  const totalSends = customSends ?? campaigns.reduce((s,c)=>s+c.recipients*c.emails,0);
+  const months = customMonths ?? o.months;
+  const rate = customRate ?? o.rate;
+  const sendsPerMonth = totalSends / months;
+  const sendsPerDay = sendsPerMonth / o.bizDays;
+  const extInboxes = customInboxes ?? Math.max(1, Math.ceil(sendsPerDay / o.extRate));
+  const intInboxes = Math.max(1, Math.ceil(sendsPerDay / o.intRate));
+  const phantom = Math.max(0, extInboxes - intInboxes);
+  const monthly = extInboxes * rate;
+  const total = o.setup + monthly * months;
+  // Labor = (setup hours + campaigns × per-campaign hours) × hourly rate
+  const labor = o.philHours * o.philRate;
+  const overhead = 297 * months;
+  // Per-operated-mailbox operational cost: monitoring labor + Instantly allocation + hosting share
+  // THIS is what makes internal send rate actually affect margin (the margin engine)
+  const operationalCost = intInboxes * (o.perInboxCost || 0) * months;
+  const cost = labor + overhead + operationalCost;
+  const margin = total - cost;
+  const marginPct = total > 0 ? margin / total : 0;
+  // Total domains needed = all inboxes / per-domain (assumes all are new infra)
+  const totalDomains = Math.ceil(extInboxes / o.inboxesPerDomain);
+  // NEW infrastructure: subtract existing warmed mailboxes
+  const newInboxesNeeded = Math.max(0, extInboxes - (o.existingMailboxes || 0));
+  const newDomains = Math.ceil(newInboxesNeeded / o.inboxesPerDomain);
+  return {
+    totalSends, sendsPerMonth, sendsPerDay,
+    extInboxes, intInboxes, phantom,
+    monthly, total, labor, overhead, cost, margin, marginPct,
+    months, rate,
+    domains: newDomains,           // For setup-labor math: only count NEW domains being provisioned
+    totalDomains,                  // For capacity context: all domains the campaign uses
+    newInboxes: newInboxesNeeded,
+    effRev: phantom * rate * months,
+    perLead: campaigns.reduce((s,c)=>s+c.recipients,0) > 0 ? total / campaigns.reduce((s,c)=>s+c.recipients,0) : 0,
+    effHour: o.philHours > 0 ? total / o.philHours : 0,
+  };
+}
+
+function cellClass(pct) {
+  if (pct < 0.30) return 'c-walk';
+  if (pct < 0.40) return 'c-thin';
+  if (pct < 0.50) return 'c-mid';
+  if (pct < 0.60) return 'c-good';
+  return 'c-best';
+}
+
+function recompute() {
+  const o = getOpts();
+  const c = computeFromInputs(o);
+  const totR = campaigns.reduce((s,x)=>s+x.recipients,0);
+  const totE = campaigns.reduce((s,x)=>s+x.recipients*x.emails,0);
+  const avgEmails = totR > 0 ? (totE/totR).toFixed(2) : 0;
+
+  // Cascaded Phillip-hours display
+  $('philHoursTotal').textContent = o.philHours + 'h';
+  $('philHoursFormula').textContent = o.setupHrs + ' + (' + campaigns.length + ' campaign' + (campaigns.length === 1 ? '' : 's') + ' × ' + o.perCampHrs + ') = ' + o.philHours + 'h';
+
+  // Locked quote display
+  $('lockedRate').textContent = '$' + o.rate + '/inbox/mo';
+  $('lockedSetup').textContent = fmt$(o.setup);
+
+  // Client-facing proposal section
+  $('pp-campaigns').textContent = campaigns.length + ' campaign' + (campaigns.length===1?'':'s');
+  $('pp-campaignList').innerHTML = campaigns.map((cmp, i) => `
+    <div class="proposal-line" style="padding: 4px 0 4px 16px; font-size: 13px; border-left: 2px solid var(--accent); margin: 4px 0 4px 16px; background: var(--bg-3); border-radius: 0 6px 6px 0;">
+      <span class="pl-label">${i+1}. ${cmp.name || 'Campaign ' + (i+1)}</span>
+      <span class="pl-val">${fmt(cmp.recipients)} recipients × ${cmp.emails} emails = ${fmt(cmp.recipients * cmp.emails)} sends</span>
+    </div>
+  `).join('');
+  $('pp-recipients').textContent = fmt(totR);
+  $('pp-emails').textContent = avgEmails;
+  $('pp-sends').textContent = fmt(c.totalSends);
+  $('pp-months').textContent = o.months + ' month' + (o.months===1?'':'s');
+  $('pp-domains').textContent = c.domains;
+  $('pp-inboxes').textContent = c.extInboxes;
+  $('pp-setup').textContent = fmt$(o.setup) + ' (one-time)';
+  $('pp-rate').textContent = '$' + o.rate;
+  $('pp-monthly').textContent = fmt$(c.monthly) + ' (' + c.extInboxes + ' × $' + o.rate + ')';
+  $('pp-months2').textContent = o.months + ' month' + (o.months===1?'':'s');
+  $('pp-total').textContent = fmt$(c.total);
+  // Compute setup margin specifically (using domain-scaled setup labor cost)
+  const lockedSetupMailboxes = c.domains * o.inboxesPerDomain;
+  const lockedSetupLaborCost = (2 + 1.5 * c.domains + 0.2 * lockedSetupMailboxes) * o.philRate;
+  const setupMargin = o.setup - lockedSetupLaborCost;
+  const setupMarginPct = o.setup > 0 ? setupMargin / o.setup : 0;
+  $('setupMarginDisplay').textContent = 'Setup margin: ' + fmt$(setupMargin) + ' (' + fmtPct(setupMarginPct) + ') · labor ' + fmt$(lockedSetupLaborCost);
+
+  // Big numbers
+  $('bigRev').textContent = fmt$(c.total);
+  $('bigRevSub').textContent = fmt$(c.monthly) + '/mo × ' + o.months + ' mo + ' + fmt$(o.setup) + ' setup';
+  $('bigCost').textContent = fmt$(c.cost);
+  $('bigCostSub').textContent = 'Labor ' + fmt$(c.labor) + ' + Overhead ' + fmt$(c.overhead);
+  $('bigMargin').textContent = fmt$(c.margin) + ' (' + fmtPct(c.marginPct) + ')';
+  $('bigMarginSub').textContent = 'Effective Phillip rate: ' + fmt$(c.effHour) + '/h';
+
+  // Margin card color
+  const card = $('bigMarginCard');
+  card.classList.remove('thin','bad');
+  let flagHTML;
+  if (c.marginPct < 0.30) { card.classList.add('bad'); flagHTML = '<span class="flag walk">WALK</span>'; }
+  else if (c.marginPct < 0.45) { card.classList.add('thin'); flagHTML = '<span class="flag thin">THIN</span>'; }
+  else { flagHTML = '<span class="flag ok">OK</span>'; }
+  $('statusFlag').innerHTML = flagHTML;
+
+  // Gauge
+  const gp = Math.max(0, Math.min(1, c.marginPct / 0.7));
+  $('gaugeFill').style.width = (gp * 100) + '%';
+  $('gaugeMarker').style.left = (gp * 100) + '%';
+
+  // Cost stack
+  const laborPct = c.total > 0 ? (c.labor / c.total * 100) : 0;
+  const oh = c.total > 0 ? (c.overhead / c.total * 100) : 0;
+  const mp = Math.max(0, c.total > 0 ? (c.margin / c.total * 100) : 0);
+  $('costStack').innerHTML = `
+    <div class="stack-seg labor" style="width:${laborPct}%">${laborPct >= 7 ? fmtPct(laborPct/100) : ''}</div>
+    <div class="stack-seg overhead" style="width:${oh}%">${oh >= 7 ? fmtPct(oh/100) : ''}</div>
+    <div class="stack-seg profit" style="width:${mp}%">${mp >= 7 ? fmtPct(mp/100) : ''}</div>
+  `;
+
+  // Detail breakdown
+  $('d-recipients').textContent = fmt(totR);
+  $('d-avgEmails').textContent = avgEmails;
+  $('d-sends').textContent = fmt(c.totalSends);
+  $('d-sendsMo').textContent = fmt(Math.round(c.sendsPerMonth));
+  $('d-sendsDay').textContent = Math.round(c.sendsPerDay);
+  $('d-extInboxes').textContent = c.extInboxes;
+  $('d-domains').textContent = c.domains;
+  $('d-intInboxes').textContent = c.intInboxes;
+  $('d-phantom').textContent = c.phantom + (c.phantom > 0 ? ' inboxes' : '');
+  $('d-effRev').textContent = fmt$(c.effRev);
+  $('d-setup').textContent = fmt$(o.setup);
+  $('d-monthly').textContent = fmt$(c.monthly);
+  $('d-rev').textContent = fmt$(c.total);
+  $('d-labor').textContent = fmt$(c.labor);
+  $('d-overhead').textContent = fmt$(c.overhead);
+  $('d-perLead').textContent = fmt$(c.perLead) + ' / recipient';
+  $('d-effHour').textContent = fmt$(c.effHour) + '/h';
+
+  // ── Matrix 1: rate × internal send rate (click to lock both) ──
+  const rates = [150, 175, 200, 225, 250, 275, 300, 350];
+  const sendRates = [25, 30, 35, 40, 45, 50, 55, 60];
+  $('m1-h').innerHTML = '<th>$/inbox/mo ↓ · Int rate →</th>' + sendRates.map(s=>'<th class="'+(s===o.intRate ? 'locked-col' : '')+'">'+s+'/d</th>').join('');
+  $('m1-b').innerHTML = rates.map(r => {
+    const isLockedRow = (r === o.rate);
+    const cells = sendRates.map(s => {
+      const oo = { ...o, intRate: s };
+      const cc = computeFromInputs(oo, undefined, undefined, undefined, r);
+      const cls = cellClass(cc.marginPct);
+      const isSelected = (r === o.rate && s === o.intRate);
+      return '<td class="'+cls+' clickable'+(isSelected ? ' selected' : '')+'" onclick="lockCell({rate:'+r+',intRate:'+s+'})"><span class="pct">'+fmtPct(cc.marginPct)+'</span><span class="amt">'+fmt$(cc.margin)+'</span></td>';
+    }).join('');
+    return '<tr'+(isLockedRow ? ' class="locked-row"' : '')+'><th>$'+r+'</th>'+cells+'</tr>';
+  }).join('');
+
+  // Matrix 2 (rate × quoted inbox count) was removed — inbox count is derived from scope, not freely chosen
+
+  // ── Matrix 3: months × rate (click locks rate + months) ──
+  const monthsRange = [1, 2, 3, 4, 6];
+  $('m3-h').innerHTML = '<th>$/inbox/mo ↓ · Months →</th>' + monthsRange.map(s=>'<th class="'+(s===o.months ? 'locked-col' : '')+'">'+s+'mo</th>').join('');
+  $('m3-b').innerHTML = rates.map(r => {
+    const isLockedRow = (r === o.rate);
+    const cells = monthsRange.map(m => {
+      const cc = computeFromInputs(o, undefined, undefined, m, r);
+      const cls = cellClass(cc.marginPct);
+      const isSelected = (r === o.rate && m === o.months);
+      return '<td class="'+cls+' clickable'+(isSelected ? ' selected' : '')+'" onclick="lockCell({rate:'+r+',months:'+m+'})"><span class="pct">'+fmtPct(cc.marginPct)+'</span><span class="amt">'+fmt$(cc.margin)+'</span></td>';
+    }).join('');
+    return '<tr'+(isLockedRow ? ' class="locked-row"' : '')+'><th>$'+r+'</th>'+cells+'</tr>';
+  }).join('');
+
+  // ── Setup matrix: # domains × setup fee (2D) ──
+  const domainOpts = [1, 3, 5, 7, 10, 15, 20];
+  const setupFeeOpts = [500, 1000, 1500, 2000, 2500, 3000, 4000, 5000];
+  const currentDomains = c.domains;
+  const lockedDomainRow = domainOpts.find(d => d >= currentDomains) || domainOpts[domainOpts.length-1];
+  // Current setup labor cost (for display)
+  const actualMailboxes = currentDomains * o.inboxesPerDomain;
+  const actualSetupLaborCost = (2 + 1.5 * currentDomains + 0.2 * actualMailboxes) * o.philRate;
+  $('setupLaborCost').textContent = fmt$(actualSetupLaborCost) + ' (' + currentDomains + ' domain' + (currentDomains===1?'':'s') + ' × ' + o.inboxesPerDomain + ' mailboxes)';
+
+  $('setupHeader').innerHTML = '<th>Domains</th><th style="color: var(--red); font-weight: 700;">Labor cost</th>' + setupFeeOpts.map(s=>'<th class="'+(s===o.setup ? 'locked-col' : '')+'">'+fmt$(s)+'</th>').join('');
+  $('setupBody').innerHTML = domainOpts.map(d => {
+    const mailboxes = d * o.inboxesPerDomain;
+    const setupLaborHrs = 2 + 1.5 * d + 0.2 * mailboxes;
+    const setupLaborCost = setupLaborHrs * o.philRate;
+    const isLockedRow = (d === lockedDomainRow);
+    const cells = setupFeeOpts.map(s => {
+      const margin = s - setupLaborCost;
+      const pct = s > 0 ? margin / s : 0;
+      const cls = cellClass(pct);
+      const isSelected = (s === o.setup && d === lockedDomainRow);
+      return '<td class="'+cls+' clickable'+(isSelected ? ' selected' : '')+'" onclick="lockSetup('+s+')"><span class="pct">'+fmtPct(pct)+'</span><span class="amt">'+fmt$(margin)+'</span></td>';
+    }).join('');
+    const laborCol = '<td style="font-family: \'JetBrains Mono\', monospace; color: var(--red); font-weight: 700;">'+fmt$(setupLaborCost)+'<span class="amt" style="display: block; color: var(--text-3); font-weight: 400;">'+setupLaborHrs.toFixed(1)+'h</span></td>';
+    return '<tr'+(isLockedRow ? ' class="locked-row"' : '')+'><th>' + d + ' domain' + (d===1?'':'s') + '</th>'+laborCol+cells+'</tr>';
+  }).join('');
+
+  // ── Tier presets — scope-aware pricing strategies ──
+  // Each tier defines a PRICING STRATEGY; inbox count is computed from user's scope at the tier's send rate
+  // Setup fee CASCADES DOWN from the user's matrix selection (o.setup) — tiers don't hardcode it
+  const tiers = [
+    { name: "Lean",       rate: 175, intRate: 30, suited: "Price-sensitive · first-time clients · competitive bid" },
+    { name: "Standard",   rate: 200, intRate: 35, suited: "First-time clients · standard agency rate" },
+    { name: "Premium",    rate: 250, intRate: 40, suited: "Repeat clients · expansion · custom domains", recommended: true },
+    { name: "Aggressive", rate: 275, intRate: 45, suited: "Premium service · efficiency-push · proven clients" },
+    { name: "Max-margin", rate: 325, intRate: 50, suited: "High-value clients · max margin · scope creep buffer" },
+  ];
+  $('tierGrid').innerHTML = tiers.map(t => {
+    const oo = { ...o, intRate: t.intRate };
+    const cc = computeFromInputs(oo, undefined, undefined, o.months, t.rate);
+    // Use CURRENT setup fee (cascaded from sensitivity selection) — not tier-specific
+    const total = o.setup + cc.monthly * o.months;
+    const adjMargin = total - cc.cost;
+    const adjPct = total > 0 ? adjMargin / total : 0;
+    const marginClass = adjPct < 0.3 ? 'bad' : adjPct < 0.45 ? 'thin' : '';
+    // Active match on rate + intRate only — setup is independent
+    const isActive = (t.rate === o.rate && t.intRate === o.intRate);
+    return `
+      <div class="tier-card${t.recommended ? ' recommended' : ''}${isActive ? ' active' : ''}" onclick="lockTier(${JSON.stringify(t).replace(/"/g,'&quot;')})">
+        <div class="tier-name">${t.name}</div>
+        <div class="tier-price">${fmt$(total)}</div>
+        <div class="tier-monthly">${fmt$(cc.monthly)}/mo × ${o.months} mo + ${fmt$(o.setup)} setup <span style="color: var(--text-3);">(from matrix)</span></div>
+        <div class="tier-margin ${marginClass}">Margin: ${fmt$(adjMargin)} (${fmtPct(adjPct)})</div>
+        <div class="tier-stats">
+          <span>New domains</span><span>${cc.domains}</span>
+          <span>Inboxes quoted</span><span>${cc.extInboxes}</span>
+          <span>Inboxes operated</span><span>${cc.intInboxes}</span>
+          <span>$/inbox/mo</span><span>$${t.rate}</span>
+          <span>Internal rate</span><span>${t.intRate}/d</span>
+        </div>
+        <div class="tier-spec">${t.suited}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function lockTier(tier) {
+  $('rate').value = tier.rate;
+  $('intRate').value = tier.intRate;
+  // Don't override setup — it cascades from the setup-fee matrix selection
+  recompute();
+  document.querySelector('h2:nth-of-type(4)').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function copyProposal() {
+  const text = generateProposalText();
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = $('copyProposalBtn');
+    const orig = btn.textContent;
+    btn.textContent = "✓ Copied!";
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function generateProposalText() {
+  const o = getOpts();
+  const c = computeFromInputs(o);
+  const totR = campaigns.reduce((s,x)=>s+x.recipients,0);
+  const totE = campaigns.reduce((s,x)=>s+x.recipients*x.emails,0);
+  const avgEmails = totR > 0 ? (totE/totR).toFixed(1) : 0;
+  const campaignList = campaigns.map(c => `  • ${c.name}: ${fmt(c.recipients)} recipients × ${c.emails} emails = ${fmt(c.recipients*c.emails)} sends`).join('\n');
+  return `PROPOSAL · OUTBOUND CAMPAIGN ENGAGEMENT
+─────────────────────────────────────────
+
+SCOPE
+  • ${campaigns.length} active campaign${campaigns.length===1?'':'s'}:
+${campaignList}
+  • Total recipients: ${fmt(totR)}
+  • Avg emails per recipient: ${avgEmails}
+  • Total sends planned: ${fmt(c.totalSends)}
+  • Engagement length: ${o.months} month${o.months===1?'':'s'}
+
+DEDICATED INFRASTRUCTURE
+  • ${c.domains} new sender domain${c.domains===1?'':'s'} provisioned
+  • ${c.extInboxes} dedicated mailboxes
+  • Warmup lead time: 4-6 weeks before first send
+
+INVESTMENT
+  • Setup fee (one-time):       ${fmt$(o.setup)}
+  • Monthly rate per mailbox:   $${o.rate}
+  • Monthly total:              ${fmt$(c.monthly)} (${c.extInboxes} inboxes × $${o.rate})
+  • Engagement length:          ${o.months} month${o.months===1?'':'s'}
+  ─────────────────────────────────
+  TOTAL ENGAGEMENT COST:        ${fmt$(c.total)}
+
+WHAT'S INCLUDED
+  ✓ Lead sourcing + multi-provider email enrichment
+  ✓ Per-lead personalization research (firm signals, role context)
+  ✓ Multi-segment copy variants per campaign
+  ✓ Up to 4 rounds of copy iteration per campaign
+  ✓ Sender domain warmup + reputation management
+  ✓ Daily delivery monitoring + bounce/spam complaint triage
+  ✓ Reply routing to your inbox + classification
+  ✓ Weekly performance readouts (sends / opens / replies / conversions)
+  ✓ UTM tagging + funnel attribution support
+  ✓ CAN-SPAM compliant infrastructure (List-Unsubscribe + physical address footer)
+
+— Skylarq
+`;
+}
+
+// Initial render
+renderCampaigns();
+// Wire up all inputs
+['months','bizDays','extRate','intRate','inboxesPerDomain','perInboxCost','existingMailboxes','rate','setup','philRate','setupHours','hoursPerCampaign'].forEach(id => {
+  $(id).addEventListener('input', recompute);
+});
+recompute();
+
+
+// Password gate
+const GATE_HASH = "1a1e61a092638d456e92a7d32fae5760b10607ae40a23c80446ea8cffdf7f332"; // sha256 of skylarq123
+async function sha256(s) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+async function checkPassword(e) {
+  if (e) e.preventDefault();
+  const v = document.getElementById("gate-input").value;
+  const h = await sha256(v);
+  if (h === GATE_HASH) {
+    sessionStorage.setItem("gate-unlocked", "1");
+    document.getElementById("gate").style.display = "none";
+    document.getElementById("calc-content").style.display = "block";
+  } else {
+    document.getElementById("gate-error").textContent = "Incorrect.";
+    document.getElementById("gate-input").value = "";
+  }
+  return false;
+}
+if (sessionStorage.getItem("gate-unlocked") === "1") {
+  document.getElementById("gate").style.display = "none";
+  document.getElementById("calc-content").style.display = "block";
+}
+
+</script>
+</div>
+</body>
+</html>
