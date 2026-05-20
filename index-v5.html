@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Internal</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0a0a0b; --bg-2: #131316; --bg-3: #1a1a1f; --border: #2a2a31;
+  --text: #e8e8ea; --text-2: #a0a0a8; --text-3: #6b6b75;
+  --accent: #e3a86c; --accent-2: #d97757;
+  --green: #5fb878; --yellow: #d4a843; --red: #d05e5e; --blue: #6ba8d4;
+}
+html { scroll-behavior: smooth; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; font-size: 15px; }
+.layout { display: grid; grid-template-columns: 280px 1fr; min-height: 100vh; }
+nav { background: var(--bg-2); border-right: 1px solid var(--border); padding: 32px 24px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+nav .logo { font-weight: 700; font-size: 16px; color: var(--accent); margin-bottom: 4px; letter-spacing: -0.02em; }
+nav .sublogo { font-size: 12px; color: var(--text-3); margin-bottom: 28px; }
+nav ul { list-style: none; }
+nav li { margin-bottom: 4px; }
+nav a { color: var(--text-2); text-decoration: none; display: block; padding: 6px 8px; border-radius: 4px; font-size: 13px; transition: all 0.15s; }
+nav a:hover { background: var(--bg-3); color: var(--text); }
+nav a.section-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-3); margin-top: 20px; padding: 4px 8px; pointer-events: none; }
+main { padding: 64px 80px; max-width: 1100px; }
+h1 { font-size: 42px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; margin-bottom: 8px; }
+h1 .sub { display: block; font-size: 16px; font-weight: 500; color: var(--text-2); margin-top: 12px; letter-spacing: 0; }
+h2 { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; margin: 72px 0 24px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+h2 .num { color: var(--accent); margin-right: 12px; font-weight: 600; font-size: 22px; }
+h3 { font-size: 20px; font-weight: 700; margin: 36px 0 14px; letter-spacing: -0.01em; }
+h4 { font-size: 14px; font-weight: 700; margin: 20px 0 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); }
+p { margin-bottom: 14px; }
+ul.std, ol.std { margin: 10px 0 18px 26px; }
+ul.std li, ol.std li { margin-bottom: 7px; }
+strong { color: #fff; font-weight: 600; }
+em { color: var(--accent); font-style: normal; font-weight: 500; }
+code { background: var(--bg-3); color: var(--accent); padding: 2px 6px; border-radius: 3px; font-family: "JetBrains Mono", "Menlo", monospace; font-size: 13px; }
+pre { background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; padding: 20px; overflow-x: auto; margin: 16px 0 24px; font-family: "JetBrains Mono", "Menlo", monospace; font-size: 13px; line-height: 1.6; }
+pre code { background: none; padding: 0; color: var(--text); }
+.hero { margin-bottom: 40px; }
+.version-tag { display: inline-block; background: var(--bg-3); color: var(--accent); padding: 4px 10px; border-radius: 12px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; margin-bottom: 16px; }
+.hero p.lede { font-size: 18px; color: var(--text-2); margin-top: 22px; max-width: 720px; line-height: 1.5; }
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 28px 0 32px; }
+.stat { background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; padding: 18px; }
+.stat .v { font-size: 26px; font-weight: 800; color: var(--accent); letter-spacing: -0.02em; }
+.stat .l { font-size: 12px; color: var(--text-3); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+.stat.bad .v { color: var(--red); }
+.stat.good .v { color: var(--green); }
+.stat.warn .v { color: var(--yellow); }
+
+.tldr { background: var(--bg-2); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 8px; padding: 22px 26px; margin-bottom: 30px; }
+.tldr h4 { margin-top: 0; color: var(--accent); }
+.tldr ul { margin-left: 20px; }
+.tldr li { margin-bottom: 6px; }
+
+.lesson { background: var(--bg-2); border: 1px solid var(--border); border-radius: 10px; margin: 18px 0; padding: 24px 28px; transition: border-color 0.15s; }
+.lesson:hover { border-color: var(--accent); }
+.lesson .ribbon { display: flex; align-items: baseline; gap: 14px; margin-bottom: 14px; }
+.lesson .ribbon .num { background: var(--accent); color: var(--bg); font-weight: 700; padding: 4px 10px; border-radius: 4px; font-size: 12px; letter-spacing: 0.04em; flex-shrink: 0; }
+.lesson .headline { font-size: 19px; font-weight: 700; letter-spacing: -0.01em; color: var(--text); line-height: 1.35; }
+.lesson h5 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-3); margin: 14px 0 6px; font-weight: 700; }
+.lesson .examples { background: var(--bg-3); border-radius: 6px; padding: 14px 16px; margin: 10px 0; font-size: 14px; }
+.lesson .examples .client { display: inline-block; background: rgba(227,168,108,0.15); color: var(--accent); padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; margin-right: 8px; }
+.lesson .takeaway { background: rgba(95,184,120,0.06); border-left: 2px solid var(--green); padding: 12px 16px; margin-top: 14px; font-size: 14px; border-radius: 0 6px 6px 0; }
+.lesson .takeaway::before { content: "→ "; color: var(--green); font-weight: 700; }
+
+.callout { background: rgba(208,94,94,0.08); border-left: 3px solid var(--red); padding: 16px 20px; border-radius: 6px; margin: 16px 0; }
+.callout.win { background: rgba(95,184,120,0.08); border-left-color: var(--green); }
+.callout.info { background: rgba(107,168,212,0.08); border-left-color: var(--blue); }
+.callout.real { background: rgba(227,168,108,0.08); border-left-color: var(--accent); }
+.callout h5 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; color: var(--red); }
+.callout.win h5 { color: var(--green); }
+.callout.info h5 { color: var(--blue); }
+.callout.real h5 { color: var(--accent); }
+
+table { width: 100%; border-collapse: collapse; margin: 14px 0 22px; font-size: 13px; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+th { background: var(--bg-3); color: var(--text-2); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
+tr:hover td { background: var(--bg-2); }
+td.num { text-align: right; font-family: "JetBrains Mono", monospace; }
+td.good { color: var(--green); }
+td.bad { color: var(--red); }
+td.warn { color: var(--yellow); }
+
+.client-pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+.client-pill.active { background: rgba(95,184,120,0.15); color: var(--green); }
+.client-pill.locked { background: rgba(95,184,120,0.15); color: var(--green); }
+.client-pill.pilot { background: rgba(107,168,212,0.15); color: var(--blue); }
+.client-pill.proposal { background: rgba(227,168,108,0.15); color: var(--accent); }
+.client-pill.waiting { background: rgba(212,168,67,0.15); color: var(--yellow); }
+.client-pill.gap { background: rgba(208,94,94,0.15); color: var(--red); }
+
+.next-card { background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; margin: 12px 0; display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: start; }
+.next-card .urgency { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 4px 10px; border-radius: 4px; }
+.next-card .urgency.now { background: rgba(208,94,94,0.15); color: var(--red); }
+.next-card .urgency.this-week { background: rgba(212,168,67,0.15); color: var(--yellow); }
+.next-card .urgency.soon { background: rgba(107,168,212,0.15); color: var(--blue); }
+.next-card .body { font-size: 14px; }
+.next-card .body strong { display: block; margin-bottom: 4px; }
+.next-card .owner { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; }
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  nav { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+  main { padding: 32px 24px; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .next-card { grid-template-columns: 1fr; }
+}
+
+/* Password gate */
+.gate-overlay { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+.gate-box { background: var(--bg-2); border: 1px solid var(--border); border-radius: 12px; padding: 40px 48px; max-width: 420px; width: 90%; text-align: center; }
+.gate-box h2 { font-size: 18px; margin: 0 0 8px; padding: 0; border: none; color: var(--accent); }
+.gate-box p { color: var(--text-3); font-size: 13px; margin-bottom: 24px; }
+.gate-box input { width: 100%; padding: 12px 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: inherit; font-size: 15px; outline: none; }
+.gate-box input:focus { border-color: var(--accent); }
+.gate-box button { width: 100%; margin-top: 12px; padding: 12px; background: var(--accent); color: var(--bg); border: none; border-radius: 6px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.gate-box button:hover { background: var(--accent-2); }
+.gate-error { color: var(--red); font-size: 12px; margin-top: 12px; min-height: 16px; }
+#content { display: none; }
+</style>
+</head>
+<body>
+
+<div class="gate-overlay" id="gate">
+  <div class="gate-box">
+    <h2>Skylarq · internal</h2>
+    <p>Password required to view.</p>
+    <form id="gate-form" onsubmit="return checkPassword(event)">
+      <input type="password" id="gate-input" autofocus placeholder="Password">
+      <button type="submit">Enter</button>
+      <div class="gate-error" id="gate-error"></div>
+    </form>
+  </div>
+</div>
+
+<div id="content">
+<div class="layout">
+
+<nav>
+  <div class="logo">Skylarq</div>
+  <div class="sublogo">4 clients in 3 weeks · v5<br>2026-05-20 · what we've learned</div>
+
+  <span class="section-label">Overview</span>
+  <ul>
+    <li><a href="#tldr">TL;DR</a></li>
+    <li><a href="#reality">Where we are</a></li>
+  </ul>
+
+  <span class="section-label">The 12 Lessons</span>
+  <ul>
+    <li><a href="#l1">1 · 1-touch is dead</a></li>
+    <li><a href="#l2">2 · Channel mix = ICP</a></li>
+    <li><a href="#l3">3 · Conference intelligence = product</a></li>
+    <li><a href="#l4">4 · Two infra paths</a></li>
+    <li><a href="#l5">5 · "Made it right" mode</a></li>
+    <li><a href="#l6">6 · PA-gatekept hooks</a></li>
+    <li><a href="#l7">7 · Judgment layer = human</a></li>
+    <li><a href="#l8">8 · ACV mismatch is brutal</a></li>
+    <li><a href="#l9">9 · KG = compounding moat</a></li>
+    <li><a href="#l10">10 · Founder voice wins</a></li>
+    <li><a href="#l11">11 · Reputation isolation</a></li>
+    <li><a href="#l12">12 · Don't sell what we don't run</a></li>
+  </ul>
+
+  <span class="section-label">Status</span>
+  <ul>
+    <li><a href="#clients">Per-client status</a></li>
+    <li><a href="#next">What's next (this week)</a></li>
+    <li><a href="#kg">Customer OS / KG</a></li>
+  </ul>
+
+  <span class="section-label">Reference</span>
+  <ul>
+    <li><a href="#stack">Tool + pricing stack</a></li>
+    <li><a href="#deep">Deeper reference (collapsible)</a></li>
+    <li><a href="#archive">Historical v3 / v4 archive</a></li>
+  </ul>
+</nav>
+
+<main>
+
+<div class="hero">
+  <span class="version-tag">v5 · 2026-05-20 · lessons-first rewrite</span>
+  <h1>4 clients in 3 weeks — what we've learned</h1>
+  <p class="lede">v3 was a single-client meta-analysis. v4 was a 4-client portfolio snapshot. v5 keeps the data but reorganizes around the <strong>12 lessons</strong> that actually change how we'd run the next 4 engagements. Each lesson cites the clients where we lived it. The historical analysis sits in the archive.</p>
+</div>
+
+<section id="tldr">
+<div class="tldr">
+<h4>TL;DR</h4>
+<ul>
+  <li><strong>4 active engagements:</strong> Aakash · InspectMind ($2K paid v1 + $1K base + $500/paid customer v2 locked), Vishal · IronLeap ($500/QM pilot), Denzil · Smarty (IFE live + multi-channel proposal under review at $1,550-3,600/mo), Emmie · Yuzu Labs (Gartner CSO + Snowflake + HITEC builds in flight).</li>
+  <li><strong>The 12 lessons cover three structural truths:</strong> outbound is ICP-specific (not one-size-fits-all), the wedge is operational judgment (Stage 9 ≠ automatable), and Customer OS makes the agency compound over time.</li>
+  <li><strong>Where v5 lands vs v3:</strong> the "service vs VC-backable" debate is resolved — we're a service that's increasingly defensible because of the KG substrate, not because we're heading toward SaaS. Cardinal's $2K floor was the right anchor; we're now selling at $1.5-3.5K/mo with stickier multi-channel deals on top.</li>
+  <li><strong>Where v5 lands vs v4:</strong> v4 inferred customer state from memory + jsonls + proposal docs. v5 corrects with live KG-sourced data — most notably Aakash's locked $1K + $500/paid expansion deal that v4 undersold.</li>
+  <li><strong>The unresolved question:</strong> can we run 4+ parallel without dropping balls? Customer OS is the bet that the answer is yes. We'll know by mid-June (when FGMC research + Snowflake Summit + Vishal pilot all hit at once).</li>
+</ul>
+</div>
+</section>
+
+<section id="reality">
+<h2><span class="num">00</span> Where we are right now</h2>
+
+<div class="stats-grid">
+  <div class="stat good"><div class="v">4</div><div class="l">active client engagements</div></div>
+  <div class="stat good"><div class="v">$3K</div><div class="l">realized + locked (Aakash v1 paid + v2 expansion)</div></div>
+  <div class="stat"><div class="v">~$26K</div><div class="l">12-month pipeline if Smarty Multi-Niche signs</div></div>
+  <div class="stat"><div class="v">6</div><div class="l">conferences active across portfolio</div></div>
+  <div class="stat"><div class="v">288</div><div class="l">Smarty IFE sends · 27% open · 0 real replies</div></div>
+  <div class="stat"><div class="v">35+</div><div class="l">Gartner CSO confirmed attendees for Yuzu</div></div>
+  <div class="stat"><div class="v">15+</div><div class="l">Vishal Tier-1 ortho MSO targets</div></div>
+  <div class="stat warn"><div class="v">1</div><div class="l">KG-gap client (Ironleap — no chunks)</div></div>
+</div>
+</section>
+
+
+<h2><span class="num">L</span> The 12 lessons</h2>
+
+<section id="l1">
+<div class="lesson">
+  <div class="ribbon">
+    <span class="num">01</span>
+    <span class="headline">1-touch is dead. Multi-touch (3-5) is non-negotiable.</span>
+  </div>
+  <h5>Why it matters</h5>
+  <p>Industry benchmark for cold-outbound reply rate is 0.5-1.5% on a single email vs 2-5% on a 3-5 touch sequence. Most of the lift sits in touches 2-5 (60-70% of all replies come there). One-touch sends look like they're cheap but they leave most of the conversions on the table.</p>
+  <div class="examples">
+    <h5 style="color:var(--accent);margin-top:0">Where we lived it</h5>
+    <p><span class="client">Smarty IFE</span> Confirmed empirically. 288 sends compressed into 3 days because IFE was 48 hours out. 27.1% open rate (industry-normal), <strong>0 real human replies</strong> (the 1 "reply" was JETSET's autoresponder). Variant A still won opens at 30.2% — the framing was good. The sequence shape was wrong.</p>
+    <p><span class="client">Skylarq own</span> 0.28% reply rate on 6,072 sends. Most of our own campaigns were 1-2 touch. Same shape, same outcome.</p>
+  </div>
+  <div class="takeaway">No 1-touch sends going forward unless explicitly scoped by a conference within 48 hours. Default is 3-5 touch over 14-21 days. Smarty IFE got a 2-touch follow-up extension at no cost ("made it right") to validate this — see Lesson 5.</div>
+</div>
+</section>
+
+<section id="l2">
+<div class="lesson">
+  <div class="ribbon">
+    <span class="num">02</span>
+    <span class="headline">Channel mix is ICP-specific, not house style.</span>
+  </div>
+  <h5>Why it matters</h5>
+  <p>Different buyer personas respond to different channels. Selling the same email-first motion to every client is a way to underperform on most of them. Channel selection should be an output of ICP intake, not a Skylarq default.</p>
+  <div class="examples">
+    <h5 style="color:var(--accent);margin-top:0">Where we lived it</h5>
+    <table>
+      <tr><th>Client / niche</th><th>Channel mix</th><th>Why</th></tr>
+      <tr><td>Denzil · franchise</td><td>Email-first, multi-touch</td><td>Franchisor HQ buyers read email; conference-anchored timing</td></tr>
+      <tr><td>Denzil · VC (Luke's niche)</td><td><strong>LinkedIn-first</strong>, email catchall, no calls/SMS</td><td>VCs check LinkedIn for founder deal flow; phones intrusive; PAs gate email</td></tr>
+      <tr><td>Vishal · ortho RCM</td><td>Email-first → eventual phone for top tier</td><td>Healthcare CFOs respond to specific dollar claims; phone works post-warm</td></tr>
+      <tr><td>Emmie · sales/rev leaders</td><td>Conference-intelligence + email + warm intro</td><td>List quality > volume; granola/plaud transcripts unlock hyper-personalization</td></tr>
+      <tr><td>Aakash · AEC + retail brands</td><td>Email-first, 3-4 touch</td><td>Self-serve product, $50 ACV, scale > intimacy</td></tr>
+    </table>
+    <p>The Denzil VC niche is the clearest example: her GTM advisor (Luke) called the LinkedIn-first move unprompted, and our experience aligned with his read. We dropped cold calling + SMS from her proposal entirely.</p>
+  </div>
+  <div class="takeaway">ICP intake selects the channel mix per niche. Don't default to email-first for every client. Audit the audience first.</div>
+</div>
+</section>
+
+<section id="l3">
+<div class="lesson">
+  <div class="ribbon">
+    <span class="num">03</span>
+    <span class="headline">Conference intelligence is the actual productized motion.</span>
+  </div>
+  <h5>Why it matters</h5>
+  <p>Three of four current clients drove conference-anchored asks within their first weeks. The work pattern is identical each time: research the attendee landscape, identify named buyers, evaluate fit, recommend attend/sponsor/async, build the outreach list. We turned it into a tool.</p>
+  <div class="examples">
+    <h5 style="color:var(--accent);margin-top:0">Where we lived it</h5>
+    <ul class="std">
+      <li><span class="client">Denzil</span> IFE attendee research → FGMC fit analysis → FLDC pivot recommendation</li>
+      <li><span class="client">Emmie</span> Gartner CSO + Snowflake Summit + HITEC three conferences in parallel</li>
+      <li><span class="client">Jamie / Bayrn</span> (parallel proposal) 4-conference home care comparison (HC100 / HCLS / HCIF / June 15 booth)</li>
+    </ul>
+    <p>Built as <strong>Skylarq Discover</strong> — Python CLI + Streamlit UI at <code>~/Developer/skylarq-discover</code>. Four workflows: analyze single conference, compare N conferences, discover via ICP, enrich existing lead list. Parallel Claude Opus 4.7 subagents with server-side web_search. ~$3-8 per run. Each report monetizes standalone at $500-1,500 or bundled into the retainer.</p>
+  </div>
+  <div class="takeaway">Conference intelligence is the wedge product. The fact that we already productized it (CLI + UI) means we can take on 10× more conference-decision clients without 10× the Phillip-hours.</div>
+</div>
+</section>
+
+<section id="l4">
+<div class="lesson">
+  <div class="ribbon">
+    <span class="num">04</span>
+    <span class="headline">Two infrastructure paths — Path A long-term, Path B fast-launch, hybrid wins most engagements.</span>
+  </div>
+  <h5>Why it matters</h5>
+  <p>Dedicated client domains take 4-6 weeks to warm. That's incompatible with conference-anchored work where the event is in 3 weeks. The choice is real and the right answer is rarely one extreme.</p>
+  <div class="examples">
+    <h5 style="color:var(--accent);margin-top:0">Where we lived it</h5>
+    <table>
+      <tr><th></th><th>Path A — Dedicated</th><th>Path B — Shared pool</th></tr>
+      <tr><td>Launch timeline</td><td>4-6 weeks (warmup)</td><td>Day 1</td></tr>
+      <tr><td>Branding</td><td>Client-owned domains</td><td>Skylarq domains, client signature</td></tr>
+      <tr><td>Reputation</td><td>Client-isolated, durable</td><td>Shared, risk amortized</td></tr>
+      <tr><td>Mailbox $/mo</td><td>$250</td><td>$200</td></tr>
+      <tr><td>Setup $/niche</td><td>$1,500</td><td>$750</td></tr>
+    </table>
+    <p><span class="client">Smarty</span> Hybrid is the recommended pick — Path B for the time-sensitive VC launch (80-200 leads, conference-anchored), Path A warming in parallel for long-term franchise + future niches.</p>
+    <p><span class="client">InspectMind</span> Aakash's expansion proposal explicitly proposed 5 dedicated lookalike domains (<code>inspectmindai.com</code>, <code>getinspectmind.com</code>, etc.) with the 6-week warmup baked in. Wave 2 launches from Skylarq pool (warm), Wave 3 from Aakash's domains once warm — same hybrid pattern.</p>
+  </div>
+  <div class="takeaway">Offer both paths explicitly in every proposal. Default to hybrid: Path B for the urgent first niche, Path A warming in background for the rest.</div>
+</div>
+</section>
+
+<section id="l5">
+<div class="lesson">
+  <div class="ribbon">
+    <span class="num">05</span>
+    <span class="headline">"Made it right" mode preserves trust through under-delivery — and often unlocks the bigger deal.</span>
+  </div>
+  <h5>Why it matters</h5>
+  <p>Scope slips happen. The marginal cost of fixing it is small. The marginal cost of losing the client is large. Eat the gap when you under-deliver, communicate why, propose the fix. Trust compounds.</p>
+  <div class="examples">
+    <h5 style="color:var(--accent);margin-top:0">Where we lived it</h5>
+    <p><span class="client">Smarty IFE</span> Compressed 1-touch send → Denzil flagged "I thought you were running a multi-email campaign" → we owned the gap, offered 2-touch follow-up at no cost. She greenlit immediately. Within 24 hours she introduced Luke (the GTM advisor) and triggered the multi-channel proposal request that's now under review at $1,550-3,600/mo.</p>
+    <p><span class="client">InspectMind</span> Initially shipped copy with sales-voice slips in 112 personalization lines. Aakash flagged. We ran a sales-voice scrub on the render pipeline, re-shipped, and credited him 1 round of revision. Engagement kept going.</p>
+  </div>
+  <div class="takeaway">When scope under-delivers, the fix is free + fast. Communicate clearly, name the gap, propose the make-good before the client has to ask twice. Often it's the move that converts a one-off into a retainer.</div>
+</div>
+</section>
+
+<section id="l6">
+<div class="lesson">
+  <div class="ribbon">
+    <span class="num">06</span>
+    <span class="headline">PA-gatekept inboxes need real-world hooks. Generic openers die.</span>
+  </div>
+  <h5>Why it matters</h5>
+  <p>Senior inboxes (VCs, CFOs, presidents) are read by an executive assistant first. Without a mutual-connection or event reference, the PA filters to spam. The difference between "Hi {first_name}, I'd love to chat about..." and "Saw you at Gartner CSO last week — we have several mutuals including [name]..." is whether your email gets forwarded at all.</p>
+  <div class="examples">
+    <h5 style="color:var(--accent);margin-top:0">Where we lived it</h5>
+    <p><span class="client">Denzil VC niche</span> Surfaced by Luke (her advisor) explicitly. Every outbound email now ships with a personalization line tied to: a mutual LinkedIn connection / a recent event ("saw you spoke at X") / a portfolio company signal ("noticed [portco] just raised") / a shared affiliation (MIT alum, HBS section X).</p>
+    <p><span class="client">Emmie</span> The hyper-personalized 13 IRL openers from her granola/plaud transcripts are the highest-conversion lever we've seen. 13 emails > 100 generic when the content is specific to a real conversation.</p>
+  </div>
+  <div class="takeaway">No senior-buyer outbound ships without a personalization hook tied to a real-world signal. Mutual connection > event > portco > affiliation > nothing. If the lead has none of these, deprioritize them — don't burn the send.</div>
+</div>
+</section>
+
+<section id="l7">
+<div class="lesson">
+  <div class="ribbon">
+    <span class="num">07</span>
+    <span class="headline">The judgment layer is human and won't automate. Stage 9 (client copy iteration) is the wedge.</span>
+  </div>
+  <h5>Why it matters</h5>
+  <p>Automation makes the volume. Judgment makes the conversions. About 70% of the 20-stage workflow is automatable, but the parts that aren't (ICP definition, copy iteration with the client, reply qualification, strategic call mid-campaign) are exactly where the value lives. AI can't predict what a founder will object to in round 4 vs round 2 — they themselves don't know.</p>
+  <div class="examples">
+    <h5 style="color:var(--accent);margin-top:0">Where we lived it</h5>
+    <ul class="std">
+      <li><span class="client">Aakash</span> 5-6 explicit contradictions across 4 formal feedback rounds. ULI20 placement / utm_term split / physical address / sales-voice — each round was meaningful structural change, not word tweaks.</li>
+      <li><span class="client">Denzil</span> "I don't think these emails are actually still compelling" → full rewrite to her thesis voice. Then "this is less senior leadership, focus more on faster sales / onboarding" → another rewrite. Couldn't have pre-empted either.</li>
+      <li><span class="client">Emmie</span> 13 IRL emails require human-in-loop synthesis of granola/plaud transcripts into personalized openers. Today's AI extracts content but not context the way Phillip does on a call recap.</li>
+      <li><span class="client">Vishal</span> Hallucination bugs (NBA = Niles Bolton Associates not basketball; "Lifestyle 37" truncation) caught by client review, not internal QA.</li>
+    </ul>
+  </div>
+  <div class="takeaway">Don't try to automate Stage 9. Build infrastructure around it (the KG, copy-version tracking, render pipeline scrubs) so the human moves fast, but the human stays. This is what makes the agency defensible.</div>
+</div>
+</section>
+
+<section id="l8">
+<div class="lesson">
+  <div class="ribbon">
+    <span class="num">08</span>
+    <span class="headline">ACV-mismatch outbound math is brutal. Performance pricing is the only fix.</span>
+  </div>
+  <h5>Why it matters</h5>
+  <p>At $50 ACV, a $2K-$10K outbound engagement requires 1-2% paid-conversion rate just to break even for the client. Industry median is 0.1-0.5%. The math doesn't pencil at any reasonable execution quality. Flat retainer pricing for low-ACV products burns the relationship — they pay, don't convert, churn, don't come back.</p>
+  <div class="examples">
+    <h5 style="color:var(--accent);margin-top:0">Where we lived it</h5>
+    <p><span class="client">Aakash · v1</span> $50 ACV InspectMind, $2K paid for ULI Spring campaign. Needed 40 paid uploads to break even. Even top-decile execution barely pencils. He acknowledged it.</p>
+    <p><span class="client">Aakash · v2 (NEW, KG-sourced)</span> The expansion deal that just locked is <strong>$1K base + $500/paid customer accepted</strong>. 30/60/90 checkpoint clauses where both sides flex — adjust upward on strong conversion, restructure or pause if not. 60-day attribution window with monthly Stripe + PostHog reconciliation. This is the right shape for low-ACV: skin in the game on both sides, restructure-able if the math breaks.</p>
+    <p><span class="client">Vishal</span> Also performance-anchored — $500 per qualified meeting. The pilot is structured so we share the conversion risk + upside.</p>
+  </div>
+  <div class="takeaway">For ACV under ~$5K: refuse, OR shift to performance pricing (base + per-conversion). Aakash v2 is the template. Don't sell $2K-flat-retainers to $50-ACV products — both sides lose.</div>
+</div>
+</section>
+
+<section id="l9">
+<div class="lesson">
+  <div class="ribbon">
+    <span class="num">09</span>
+    <span class="headline">Customer OS / Skylarq Eternal Knowledge Graph is the compounding moat.</span>
+  </div>
+  <h5>Why it matters</h5>
+  <p>Single-engagement agencies start every client from zero context. Our KG ingests every Gmail thread, calendar event, Slack channel, Granola/Plaud transcript across all clients into a queryable similarity-searchable substrate. The longer we run engagements, the more KG context exists. Competitors don't have this. We do.</p>
+  <div class="examples">
+    <h5 style="color:var(--accent);margin-top:0">Where we lived it</h5>
+    <ul class="std">
+      <li><strong>This v5 doc</strong> was synthesized partly from live KG queries against <code>https://dev.skylarq.ai/api/v1</code>. Aakash's locked $1K + $500/paid expansion terms came from KG; v4 had inferred only "$2K paid + expansion pending."</li>
+      <li><strong>Emmie's 13 IRL emails</strong> use her granola/plaud transcripts (KG-ingested) to produce hyper-personalized openers — the lever in Lesson 6.</li>
+      <li><strong>Cross-client memory</strong> means "what did Aakash say in feedback round 3?" is answered without re-reading 4 days of Slack.</li>
+    </ul>
+    <p><strong>Roadmap (per <code>customer_os/BACKLOG.md</code>):</strong> Temporal recurring sync (Gmail/Calendar/Slack on the existing EC2 worker) + Claude Code MCP integration (read-only API keys, SHA-256 hashed, rate-limited per key) exposing <code>query_customers</code>, <code>get_customer</code>, <code>search_knowledge_base</code>, <code>get_customer_timeline</code> tools.</p>
+  </div>
+  <div class="takeaway">Customer OS is not a product we sell. It's the internal substrate that lets one operator (Phillip + Jack + Mudit) run 4+ parallel engagements without context collapse. Every conversation that flows through it makes the next engagement better. That's the moat.</div>
+</div>
+</section>
+
+<section id="l10">
+<div class="lesson">
+  <div class="ribbon">
+    <span class="num">10</span>
+    <span class="headline">Founder-voice + thesis-driven openers beat generic friendliness.</span>
+  </div>
+  <h5>Why it matters</h5>
+  <p>Cold outbound is fighting for 4 seconds of attention. A specific credential opener ("MIT CS + AI, ex-Microsoft, Harvard Business School") + a sharp thesis ("AI now writes most production code, so custom software is finally cheaper than 8 tools that half-fit") cuts through. Generic "I'd love to grab coffee" framings underperform.</p>
+  <div class="examples">
+    <h5 style="color:var(--accent);margin-top:0">Where we lived it</h5>
+    <p><span class="client">Smarty IFE</span> A/B/C variant test:</p>
+    <table>
+      <tr><th>Variant</th><th>Framing</th><th>Open rate</th></tr>
+      <tr><td>A — thesis-driven</td><td>"IFE + a thesis on franchise software" + MIT/Microsoft/HBS opener + build-vs-rent</td><td class="good"><strong>30.2%</strong></td></tr>
+      <tr><td>B — conversational</td><td>"coffee at IFE, {first_name}?" — softer opener</td><td>27.1%</td></tr>
+      <tr><td>C — tangible-value</td><td>"coffee at IFE" + $100K/yr + 7x faster qualification stat</td><td>24.0%</td></tr>
+    </table>
+    <p>Variant A won opens by 6+ points over C. Reply rate is too noisy to call at n=1, but on opens the thesis-driven opener clearly pulled.</p>
+  </div>
+  <div class="takeaway">For founder-led outbound, lead with the founder's strongest credential + a sharp differentiated thesis. Generic friendliness is a head-fake to "human" voice and underperforms specificity. The sequence still needs warmth in touch 2-3; touch 1 is for cut-through.</div>
+</div>
+</section>
+
+<section id="l11">
+<div class="lesson">
+  <div class="ribbon">
+    <span class="num">11</span>
+    <span class="headline">Reputation isolation: custom domains per client. The Skylarq pool burns out in 2-3 bad cycles.</span>
+  </div>
+  <h5>Why it matters</h5>
+  <p>Sender reputation is a finite, shared resource on any pool. One client running underperforming copy can crater deliverability for the next client. Domain reputation degrades after 2-3 cycles of bad-fit copy. The fix is mandatory: per-client dedicated domains at scale.</p>
+  <div class="examples">
+    <h5 style="color:var(--accent);margin-top:0">Where we lived it</h5>
+    <p><span class="client">Skylarq pool · April</span> 2 of our own campaigns auto-paused for bounces (May 1-2) at 4.94% bounce rate. Even with internal QA, deliverability isn't solved.</p>
+    <p><span class="client">InspectMind v2</span> The expansion proposal is built on 5 dedicated lookalike domains (<code>inspectmindai.com</code> / <code>getinspectmind.com</code> / etc.), registered under Aakash, warmed for 4-6 weeks. Skylarq pool only used for Wave 2 launch to bridge the warmup gap.</p>
+    <p><span class="client">Smarty · trysmartyai.com</span> Domain was previously suspended (Google's risky-domain flag). Will have weak deliverability for 90+ days post-recovery, possibly permanent. Forces Smarty to launch from Skylarq pool until trysmarty's reputation recovers.</p>
+  </div>
+  <div class="takeaway">At scale, every client gets dedicated warmed domains. The Skylarq pool is for bridging warmup gaps, not steady-state sending. Reputation isolation is non-negotiable.</div>
+</div>
+</section>
+
+<section id="l12">
+<div class="lesson">
+  <div class="ribbon">
+    <span class="num">12</span>
+    <span class="headline">Don't sell channels we don't run. Honest framing wins.</span>
+  </div>
+  <h5>Why it matters</h5>
+  <p>Multi-channel proposals are tempting to over-spec because "more channels = bigger deal." But selling capabilities we don't have in-house creates two failure modes: (a) we scramble to source partners mid-engagement, (b) the channel is wrong for the ICP and bombs. Both burn trust faster than smaller honest proposals.</p>
+  <div class="examples">
+    <h5 style="color:var(--accent);margin-top:0">Where we lived it</h5>
+    <p><span class="client">Smarty multi-channel proposal v1</span> Drafted with calls + SMS as Phase 2/3. Honestly framed as "via vendor partner we'd source" since we don't run dialers. Luke (Denzil's GTM advisor) then said unprompted: <em>"none of these guys want a cold call. Doing it would genuinely make them angry."</em> We dropped calls + SMS entirely from the v2 proposal. Saved a credibility hit.</p>
+    <p><span class="client">Vishal</span> Different ICP — ortho practice admins answer phones. Phone is in scope for top-tier leads <em>after</em> Phase 1 builds a warm email list, sourced via vendor partner (still external).</p>
+    <p>SMS deserves its own honest framing: TCPA + state-law minefield, 10DLC carrier registration is 4-8 weeks, phone-number enrichment accuracy is much worse than email, and there's no equivalent of "warming" a phone — sender reputation is binary. We recommend skipping pure cold SMS for almost every B2B niche.</p>
+  </div>
+  <div class="takeaway">Sell what we can deliver Day 1, label everything else as Phase 2/3 with the honest "via partner" framing. Match channel selection to ICP per Lesson 2. Trust accumulates faster than capability does.</div>
+</div>
+</section>
+
+
+<h2><span class="num">S</span> Status — per-client snapshot</h2>
+
+<section id="clients">
+<table>
+<thead>
+<tr><th>Client</th><th>Status</th><th>Last touch</th><th>Open commitment / next ask</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>Aakash · InspectMind</strong></td>
+  <td><span class="client-pill locked">v1 paid · v2 locked</span></td>
+  <td>2026-05-20 — KG confirms expansion deal terms</td>
+  <td><strong>Send Aakash the Instantly funnel numbers by tier</strong> (delivered / bounced / opened / clicked / replied across T1/T2/T3). He wants real funnel data before A/B or domain purchase. Ball in our court.</td>
+</tr>
+<tr>
+  <td><strong>Vishal · IronLeap (RCM AI)</strong></td>
+  <td><span class="client-pill waiting">Awaiting payment</span></td>
+  <td>2026-05-19 — payment link sent (Superhuman label: Waiting)</td>
+  <td><strong>Nudge payment / activate ortho campaign.</strong> Ortho ICP EXA websets ready (Strict v1 + Relaxed v2). Jack ↔ Vishal 1:1 was May 14. <span class="client-pill gap" style="margin-left:8px">KG gap</span> — no chunks ingested at org level.</td>
+</tr>
+<tr>
+  <td><strong>Denzil · Smarty</strong></td>
+  <td><span class="client-pill proposal">IFE live · proposal under review</span></td>
+  <td>2026-05-20 — v2 multi-channel proposal shared via Google Doc</td>
+  <td><strong>Activate Smarty IFE 2-touch follow-up on the 213 non-responders</strong> (loaded in Instantly, paused — E2 fires Tue May 26, E3 fires Mon Jun 1). Multi-Niche bundle ($1,550-3,600/mo) awaiting greenlight. Send call-summary notes to Luke (advisor).</td>
+</tr>
+<tr>
+  <td><strong>Emmie · Yuzu Labs</strong></td>
+  <td><span class="client-pill active">Active — multi-conference</span></td>
+  <td>2026-05-20 — Snowflake Summit attendee build shared</td>
+  <td><strong>Continue Gartner CSO 48hr LinkedIn-recap re-sweep</strong> (conference live now). <strong>Snowflake Summit full inference build</strong> (190+ exhibitors × 2-5 reps). <strong>HITEC June 15 prep</strong> using Skylarq warmed pool.</td>
+</tr>
+</tbody>
+</table>
+</section>
+
+
+<section id="next">
+<h2><span class="num">N</span> What's next — time-sensitive (this week)</h2>
+
+<div class="next-card">
+  <span class="urgency now">NOW (today/tomorrow)</span>
+  <div class="body">
+    <strong>Activate Smarty IFE 2-touch follow-up</strong>
+    E2 is scheduled to fire Tue May 26 from Instantly (paused awaiting activation). If Denzil doesn't greenlight by Mon EOD, the cadence compresses. Loaded sequence: "any chance you're at IFE this weekend?" (Tue) → "closing the loop" (Mon Jun 1).
+  </div>
+  <span class="owner">Owner: Phillip</span>
+</div>
+
+<div class="next-card">
+  <span class="urgency now">NOW (today)</span>
+  <div class="body">
+    <strong>Run Aakash's Instantly funnel-by-tier report</strong>
+    Aakash's explicit ask before he'll greenlight A/B or new-domain purchase: T1 vs T2 vs T3 numbers across delivered / bounced / opened / clicked / replied. Have the campaign IDs, can produce in 30 min.
+  </div>
+  <span class="owner">Owner: Phillip / Mudit</span>
+</div>
+
+<div class="next-card">
+  <span class="urgency now">NOW (24h)</span>
+  <div class="body">
+    <strong>Yuzu Gartner CSO LinkedIn-recap re-sweep</strong>
+    Conference is live today + tomorrow. LinkedIn post-conference attendee mentions spike at T+24 / T+48 hours. Re-run the named-attendee crawl during that window to expand the list 30-40%.
+  </div>
+  <span class="owner">Owner: Skylarq (automated via Discover)</span>
+</div>
+
+<div class="next-card">
+  <span class="urgency this-week">THIS WEEK</span>
+  <div class="body">
+    <strong>Nudge Vishal on payment + onboard ortho campaign</strong>
+    Payment link sent 2026-05-19 (Superhuman: Waiting). 24+ hours silent. EXA websets are ready, copy is drafted, this is gated only on his signature. Slack ping with the qualified-meeting definition pinned as a reminder.
+  </div>
+  <span class="owner">Owner: Phillip + Jack</span>
+</div>
+
+<div class="next-card">
+  <span class="urgency this-week">THIS WEEK</span>
+  <div class="body">
+    <strong>Send call-summary notes to Luke (Denzil's GTM advisor)</strong>
+    Committed during the May 19 call. Document the LinkedIn-first decision, no calls/SMS for VC niche, Path B initial launch with Path A warming, list expansion question, Smarty domain warmup for long-term. ~15 min of write-up.
+  </div>
+  <span class="owner">Owner: Phillip</span>
+</div>
+
+<div class="next-card">
+  <span class="urgency soon">SOON (next 2 weeks)</span>
+  <div class="body">
+    <strong>Backfill Vishal / IronLeap into the Customer OS KG</strong>
+    Ironleap entity has zero conversation chunks at org level. Same engagement depth as Aakash / Denzil / Emmie needs to be captured (call recordings, Slack threads, ICP discussion, Tier-1 verified hits). KG-gap flag in Lesson 9.
+  </div>
+  <span class="owner">Owner: Phillip (load Granola transcripts + Slack export)</span>
+</div>
+
+<div class="next-card">
+  <span class="urgency soon">SOON (post-IFE follow-up data)</span>
+  <div class="body">
+    <strong>Decide on FGMC research kickoff for Smarty</strong>
+    Conference is June 2-4 Atlanta. FCXC 2025 named ~57 franchisor execs across 43 brands as a starting point. If Denzil's Multi-Niche proposal greenlights, FGMC research goes into the engagement immediately. If not, decide whether to pause franchise work or carve out as a separate $1,500 standalone.
+  </div>
+  <span class="owner">Owner: Phillip</span>
+</div>
+</section>
+
+
+<section id="kg">
+<h2><span class="num">K</span> Customer OS / KG — operational notes</h2>
+
+<div class="callout win">
+<h5>KG queries are now working on this machine</h5>
+<p>As of 2026-05-20 evening, the Customer OS dev backend (<code>https://dev.skylarq.ai/api/v1</code>) is queryable from this Mac via the Skylarq Lore Electron dev build. Setup:</p>
+<ul class="std">
+  <li>Worktree at <code>~/Skylarq-customer-os</code> on the <code>dev</code> branch (latest commit synced)</li>
+  <li><code>customer_os/.env.local</code> populated with the correct DEV Supabase project (<code>dapnrhcojhifeeufbanp.supabase.co</code>) — distinct from PROD (<code>ezsdctbsuhtsnqtbgcgk</code>). The dev backend validates JWTs against the DEV project; PROD JWTs are rejected.</li>
+  <li><strong>One-line patch on <code>src/main/index.ts</code>:</strong> polyfill <code>globalThis.WebSocket</code> with the <code>ws</code> npm dep before <code>createAuthService()</code>. Without this, the Lore dev build hangs silently at app-ready (Electron 28 bundles Node ~18 which doesn't expose WebSocket globally; Supabase Realtime throws on init). Worth committing as a real branch fix.</li>
+</ul>
+</div>
+
+<h3>Working queries (verified 2026-05-20)</h3>
+<ul class="std">
+  <li><code>GET /customers?limit=100</code> — returns 100+ entities with stage / health / created-at. Includes Inspectmind / Trysmarty / Yuzulabs / Allstonlabs / Findymail / Pear / Niahealth / Vimes / Parallel + ~90 prospects.</li>
+  <li><code>POST /knowledge-base/search {"query": "...", "limit": N}</code> — similarity search across emails, Slack threads, Granola transcripts. Resolves person-level entities by name (Aakash → <code>aakash.prasad91@gmail.com</code>, Denzil → <code>denzil@trysmarty.com</code>, Emmie → <code>emmie@yuzulabs.io</code>, Vishal → <code>vishal@ironleap.io</code>).</li>
+  <li>Org-level entities exist (Ironleap, Inspectmind) but vary in ingestion depth — Vishal/Ironleap is the current KG gap.</li>
+</ul>
+
+<h3>What lives in the KG</h3>
+<table>
+<tr><th>Source</th><th>What gets ingested</th></tr>
+<tr><td>Gmail</td><td>Two-way threads only (filters one-shot newsletters/auto-replies)</td></tr>
+<tr><td>Google Calendar</td><td>Events ±30 days, attendees, descriptions</td></tr>
+<tr><td>Slack</td><td>Channels + DMs we participate in</td></tr>
+<tr><td>Granola / Plaud transcripts</td><td>Customer call recordings auto-transcribed</td></tr>
+<tr><td>Manual attributes</td><td>Customer stage, health_score, attributes JSON</td></tr>
+</table>
+
+<h3>Backend schema (per <code>customer_os_v0</code> branch)</h3>
+<table>
+<tr><th>Table</th><th>Purpose</th></tr>
+<tr><td><code>customers</code></td><td>One row per active customer with stage, health_score, health_category, health_reasoning</td></tr>
+<tr><td><code>entities</code></td><td>display_name, entity_type (person/org), attributes JSON</td></tr>
+<tr><td><code>context_events</code></td><td>Time-series log of every captured interaction</td></tr>
+<tr><td><code>event_participant</code></td><td>Links entities to events</td></tr>
+<tr><td><code>content_embeddings</code></td><td>Vector embeddings of chunked content for similarity search</td></tr>
+</table>
+</section>
+
+
+<section id="stack">
+<h2><span class="num">T</span> Tool + pricing stack (current)</h2>
+
+<h3>Pricing units (Smarty proposal v3 convergence)</h3>
+<table>
+<tr><th>Component</th><th>Path A (dedicated)</th><th>Path B (shared pool)</th><th>Includes</th></tr>
+<tr><td>Mailbox</td><td><strong>$250/mo</strong></td><td><strong>$200/mo</strong></td><td>Infra + sends + monitoring + the campaign work running through that mailbox (list build, enrichment, copy, A/B, reply triage, weekly reporting)</td></tr>
+<tr><td>LinkedIn profile orchestration</td><td colspan="2"><strong>$250/mo</strong> per profile</td><td>Client provides the LinkedIn profile; we run daily activity + sequencing + reply triage</td></tr>
+<tr><td>Setup (one-time per niche)</td><td><strong>$1,500</strong></td><td><strong>$750</strong></td><td>Path A: domain + DNS + warmup + ICP intake + sequence. Path B: skips warmup work.</td></tr>
+</table>
+
+<h3>Performance-pricing template (Aakash v2 + Vishal)</h3>
+<ul class="std">
+  <li><strong>Aakash v2:</strong> $1,000 base + $500/paid customer accepted · 30/60/90 checkpoint clauses · 60-day attribution · monthly Stripe + PostHog reconciliation · non-exclusive · 24h SLA · launch hold until ULI signal · $1K at green-light</li>
+  <li><strong>Vishal:</strong> setup + $500/qualified meeting · meeting must show + target ICP + decision-maker + real product conversation · Friday weekly review · ambiguous calls err in client favor</li>
+</ul>
+
+<h3>Infra tools</h3>
+<ul class="std">
+  <li><strong>Sending:</strong> Instantly Hypergrowth Plan ($97/mo, 40-mailbox pool)</li>
+  <li><strong>LLM:</strong> Anthropic Claude Max 20x ($200/mo)</li>
+  <li><strong>Enrichment:</strong> Findymail + EXA + Apollo (per-API-call usage)</li>
+  <li><strong>Domains:</strong> Cloudflare or Namecheap (~$10-15/yr per domain)</li>
+  <li><strong>Mailboxes:</strong> Google Workspace ($6/mo per mailbox) or Zoho ($1-4/mo at scale)</li>
+  <li><strong>LinkedIn:</strong> Optional Sales Navigator pass-through ($99/mo per profile)</li>
+</ul>
+</section>
+
+
+<section id="deep">
+<h2><span class="num">D</span> Deeper reference (the iterations and funnel)</h2>
+
+<p style="color:var(--text-2)">The lessons above are the distillation. Below is the source material — the funnel data, the copy iterations across rounds, the workflow stages, the chronological timeline. Click to expand. All sections preserved from v3/v4 with light updates.</p>
+
+<style>
+  details.deep-card { background: var(--bg-2); border: 1px solid var(--border); border-radius: 10px; margin: 14px 0; padding: 0; overflow: hidden; transition: border-color 0.15s; }
+  details.deep-card[open] { border-color: var(--accent); }
+  details.deep-card > summary { padding: 18px 24px; cursor: pointer; user-select: none; display: flex; align-items: baseline; gap: 14px; list-style: none; font-weight: 600; font-size: 16px; }
+  details.deep-card > summary::-webkit-details-marker { display: none; }
+  details.deep-card > summary::before { content: "▸"; color: var(--accent); font-size: 12px; transition: transform 0.15s; }
+  details.deep-card[open] > summary::before { transform: rotate(90deg); }
+  details.deep-card > summary .meta { color: var(--text-3); font-size: 12px; font-weight: 500; margin-left: auto; text-transform: uppercase; letter-spacing: 0.05em; }
+  details.deep-card .deep-body { padding: 0 24px 24px; border-top: 1px solid var(--border); padding-top: 18px; }
+  .stage-row { display: grid; grid-template-columns: 32px 1fr 80px 100px; gap: 12px; padding: 8px 0; border-bottom: 1px dashed var(--border); align-items: baseline; font-size: 13px; }
+  .stage-row .badge { color: var(--accent); font-weight: 700; font-family: "JetBrains Mono", monospace; }
+  .stage-row .time { color: var(--text-3); font-family: "JetBrains Mono", monospace; font-size: 12px; text-align: right; }
+  .stage-row .auto-tag { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600; text-align: center; }
+  .auto-yes { background: rgba(95,184,120,0.15); color: var(--green); }
+  .auto-partial { background: rgba(212,168,67,0.15); color: var(--yellow); }
+  .auto-no { background: rgba(208,94,94,0.15); color: var(--red); }
+  .iter-line { display: flex; gap: 16px; padding: 10px 0; border-bottom: 1px dashed var(--border); }
+  .iter-line .v-tag { color: var(--accent); font-weight: 700; font-family: "JetBrains Mono", monospace; font-size: 13px; min-width: 60px; }
+  .iter-line .v-body { font-size: 13px; color: var(--text-2); }
+  .tl-line { padding: 10px 0; border-bottom: 1px dashed var(--border); display: grid; grid-template-columns: 130px 1fr; gap: 16px; font-size: 13px; }
+  .tl-line .tl-date { color: var(--accent); font-weight: 600; font-family: "JetBrains Mono", monospace; font-size: 12px; }
+</style>
+
+<details class="deep-card" id="deep-timeline">
+<summary>Real timeline · 2026-04-08 → today <span class="meta">Click to expand · chronological reconstruction</span></summary>
+<div class="deep-body">
+<div class="tl-line"><div class="tl-date">2026-04-08</div><div><strong>Mailbox infrastructure provisioned.</strong> 8 skylarq.* domains, 40 mailboxes on Zoho, Instantly warmup begins.</div></div>
+<div class="tl-line"><div class="tl-date">2026-04-14</div><div>First test sends. Warmup operational.</div></div>
+<div class="tl-line"><div class="tl-date">2026-04-17 → 19</div><div><strong>14 Skylarq campaigns built end-to-end</strong> over 3 days. 1,675 leads, mostly EXA-sourced. Instantly upgraded to Hypergrowth $97/mo.</div></div>
+<div class="tl-line"><div class="tl-date">2026-04-20</div><div>All 14 Skylarq campaigns go live. First sends.</div></div>
+<div class="tl-line"><div class="tl-date">2026-04-21</div><div><strong>Audit finds 38 material errors shipped:</strong> 24 spintax leaks, 14 cert-as-firstname. <code>skylarq-qa.py</code> framework built same day.</div></div>
+<div class="tl-line"><div class="tl-date">2026-05-01-02</div><div><strong>Instantly auto-paused 2 campaigns</strong> for high bounce. Concrete proof deliverability needs ongoing monitoring.</div></div>
+<div class="tl-line"><div class="tl-date">2026-05-06</div><div>First positive reply notification from Instantly's classifier (Skylarq's own outbound).</div></div>
+<div class="tl-line"><div class="tl-date">2026-05-10</div><div><strong>InspectMind engagement begins in earnest.</strong> v9 templates written.</div></div>
+<div class="tl-line"><div class="tl-date">2026-05-11</div><div><strong>InspectMind v11 finalized and launched.</strong> 3,870 leads, 3 campaigns. Cadence bug caught mid-day (542 leads got 2 emails 16 min apart). Re-patched + re-activated.</div></div>
+<div class="tl-line"><div class="tl-date">2026-05-12</div><div><strong>Aakash $2K confirmed paid.</strong> First external revenue. Daily standup with Jack + Mudit produces the v3 meta-analysis doc.</div></div>
+<div class="tl-line"><div class="tl-date">2026-05-14</div><div><strong>Smarty IFE campaign launches.</strong> 288 leads, 3 variants (A/B/C), Path B shared pool.</div></div>
+<div class="tl-line"><div class="tl-date">2026-05-19</div><div><strong>Denzil greenlit multi-niche conversation.</strong> Intro to Luke (GTM advisor). Vishal payment link sent. Emmie/Yuzu joined Slack.</div></div>
+<div class="tl-line"><div class="tl-date">2026-05-20</div><div><strong>Aakash v2 expansion deal locked.</strong> $1K base + $500/paid customer + 30/60/90 checkpoint. Smarty multi-channel proposal sent. Yuzu Gartner + Snowflake builds delivered. Customer OS KG queries working from this Mac.</div></div>
+</div>
+</details>
+
+
+<details class="deep-card" id="deep-perf">
+<summary>Skylarq's own performance · 14 campaigns · 6,072 sends <span class="meta">Click to expand · the funnel data</span></summary>
+<div class="deep-body">
+<p style="color:var(--text-2);font-size:14px">Pulled from Instantly's <code>/campaigns/analytics</code>. Sorted by send volume. Top decile of cold outbound is 1-3% reply rate; aggregate Skylarq sits at 0.28%.</p>
+
+<table>
+<thead><tr><th>Campaign</th><th class="num">Sent</th><th class="num">Open</th><th class="num">Reply</th><th class="num">OR%</th><th class="num">BR%</th></tr></thead>
+<tbody>
+<tr><td>Exp2B — Marketing Agency Owners</td><td class="num">290</td><td class="num">43</td><td class="num">0</td><td class="num warn">14.8</td><td class="num">3.8</td></tr>
+<tr><td>SM-SDR-Advice — founder-advice pitch</td><td class="num">271</td><td class="num">33</td><td class="num">0</td><td class="num warn">12.2</td><td class="num">4.1</td></tr>
+<tr><td>SM-Agency-Advice — founder-advice pitch</td><td class="num">270</td><td class="num">40</td><td class="num">0</td><td class="num warn">14.8</td><td class="num">4.1</td></tr>
+<tr><td>v2 — 1C Executive Recruiters</td><td class="num">248</td><td class="num">71</td><td class="num">0</td><td class="num good">28.6</td><td class="num">3.2</td></tr>
+<tr><td>Exp2C — Commercial Insurance Brokers</td><td class="num">238</td><td class="num">67</td><td class="num">0</td><td class="num good">28.2</td><td class="num warn">5.5</td></tr>
+<tr><td>v2 — 4B Industrial M&A Advisors</td><td class="num">238</td><td class="num">118</td><td class="num good">2</td><td class="num good">49.6</td><td class="num warn">5.5</td></tr>
+<tr><td>v2 — 4C Prof Services M&A Advisors</td><td class="num">236</td><td class="num">92</td><td class="num good">1</td><td class="num good">39.0</td><td class="num warn">5.9</td></tr>
+<tr><td><strong>v2 — 4A Healthcare M&A Advisors</strong> <em style="color:var(--red);font-size:11px">(auto-paused May 1)</em></td><td class="num">234</td><td class="num">97</td><td class="num good">3</td><td class="num good">41.5</td><td class="num bad">6.0</td></tr>
+<tr><td>v1 — H1 Business Brokers (Main Street)</td><td class="num">227</td><td class="num">42</td><td class="num">1</td><td class="num warn">18.5</td><td class="num bad">6.6</td></tr>
+<tr><th>TOTAL (all 14)</th><th class="num">6,072</th><th class="num">1,452</th><th class="num">17</th><th class="num">23.9%</th><th class="num warn">4.94%</th></tr>
+</tbody>
+</table>
+
+<div class="callout real">
+<h5>What worked vs what didn't (Skylarq's own data)</h5>
+<ul class="std">
+  <li><strong>M&A advisor campaigns are best</strong> — 40-52% open rates, 1-3 replies per campaign. Real signal.</li>
+  <li><strong>RE Agent campaigns died</strong> — Nashville bounce 19.7%, Raleigh 13%. 5 campaigns killed for ICP drift.</li>
+  <li><strong>Founder-advice pitch (SM campaigns)</strong> — 12-15% open, 0 replies on 540 sends. Pitch doesn't land for that audience.</li>
+  <li><strong>AutonomousVC outlier</strong> — 75% open on 60 sends. Small sample, but worth investigating — ICP fit signal.</li>
+</ul>
+</div>
+</div>
+</details>
+
+
+<details class="deep-card" id="deep-evolution">
+<summary>InspectMind copy evolution · v4 → v12 (12+ versions, 4 client rounds) <span class="meta">Click to expand · the iteration story</span></summary>
+<div class="deep-body">
+<p style="color:var(--text-2);font-size:14px">12+ versions total across the ULI Spring engagement. Sample subject: Helena Schultz @ AEI (architect, Tier 2). The iteration arc shows where founder taste vs structural correctness diverged.</p>
+
+<div class="iter-line"><div class="v-tag">v4</div><div class="v-body"><strong>Aakash's first proposal (April).</strong> Pricing in body ($50/money back), name-drops, "Best, Aakash" signoff. Reads as startup pitch.</div></div>
+<div class="iter-line"><div class="v-tag">v9</div><div class="v-body"><strong>After round 1 (early May).</strong> Dropped pricing + name-drops. "AI QA/QC layer" framing.</div></div>
+<div class="iter-line"><div class="v-tag">v10</div><div class="v-body"><strong>After round 2.</strong> Added 20% ULI urgency + single CTA + broad credibility list.</div></div>
+<div class="iter-line"><div class="v-tag">v11</div><div class="v-body"><strong>After round 3 (launched May 11).</strong> Concrete outcomes (RFIs, change orders, rework). "No setup. No demo. No sales call." Multi-step cadence shipped — caught + fixed step-delay bug mid-day (542 leads received E1+E2 within 16 min before patch).</div></div>
+<div class="iter-line"><div class="v-tag">v12 LIVE</div><div class="v-body"><strong>May 12, post-standup-feedback.</strong> Aakash's rewrite + Phillip's cleanup. Tighter (~70-word E1). ULI20 only in first-follow-up per tier. <code>utm_term</code> per email step. <code>utm_term</code> per E4 segment. CAN-SPAM-compliant footer with InspectMind's physical address. E5 hyperlinked. 112 sales-voice slips stripped from personalization lines.</div></div>
+
+<div class="callout info" style="margin-top:18px">
+<h5>v12 LIVE subject + body (Tier 2 sample)</h5>
+<p style="font-family:Charter,Georgia,serif;line-height:1.7;font-size:14px;background:var(--bg-3);padding:18px;border-radius:6px;margin-top:10px">
+<strong>Subject: Catch plan issues before permit submission</strong><br><br>
+Hi Helena,<br><br>
+Noticed AEI becoming an official FORTIFIED evaluator. Thought this might be useful for catching coordination and code issues before permit submission.<br><br>
+Upload a PDF drawing/spec set, get a page-numbered report of coordination, constructability, and code-related issues back in minutes. No setup. No demo. No sales call.<br><br>
+Try it on a real project: https://inspectmind.ai/?utm_source=ULISpring&utm_medium=email...<br><br>
+—<br>
+InspectMind AI · 156 2nd St, San Francisco, CA · Reply STOP to unsubscribe
+</p>
+</div>
+</div>
+</details>
+
+
+<details class="deep-card" id="deep-stages">
+<summary>The 20-stage workflow funnel (with Phillip-hours + automation rating) <span class="meta">Click to expand · per-engagement stages</span></summary>
+<div class="deep-body">
+<p style="color:var(--text-2);font-size:14px">Each engagement passes through ~20 stages. ~70% are 80%+ automatable; the remaining 30% (judgment work) is the wedge — see <a href="#l7" style="color:var(--accent)">Lesson 7</a>.</p>
+
+<div class="stage-row"><span class="badge">01</span><span>Client intake / scoping call</span><span class="time">1-2h</span><span class="auto-tag auto-no">❌ Manual</span></div>
+<div class="stage-row"><span class="badge">02</span><span>ICP definition</span><span class="time">1-2h</span><span class="auto-tag auto-partial">⚠ 30%</span></div>
+<div class="stage-row"><span class="badge">03</span><span>Lead sourcing (conference list / Apollo / scraping)</span><span class="time">2-6h</span><span class="auto-tag auto-partial">⚠ 50%</span></div>
+<div class="stage-row"><span class="badge">04</span><span>Lead enrichment cascade (EXA / Findymail / Apollo / ContactOut)</span><span class="time">1-2h</span><span class="auto-tag auto-yes">✅ 90%</span></div>
+<div class="stage-row"><span class="badge">05</span><span>ICP filtering + tier assignment</span><span class="time">1-2h</span><span class="auto-tag auto-partial">⚠ 70%</span></div>
+<div class="stage-row"><span class="badge">06</span><span>Per-lead signal/news research</span><span class="time">2-4h</span><span class="auto-tag auto-yes">✅ 85%</span></div>
+<div class="stage-row"><span class="badge">07</span><span>Personalization line generation</span><span class="time">2-3h</span><span class="auto-tag auto-yes">✅ 90%</span></div>
+<div class="stage-row"><span class="badge">08</span><span>Domain + mailbox provisioning + warmup</span><span class="time">5-10h</span><span class="auto-tag auto-yes">✅ 80%</span></div>
+<div class="stage-row"><span class="badge">09</span><span><strong>Copy iteration with client (the bottleneck)</strong></span><span class="time">8-20h</span><span class="auto-tag auto-no">❌ The wedge</span></div>
+<div class="stage-row"><span class="badge">10</span><span>Multi-step sequence design (cadence, A/B variants)</span><span class="time">1-2h</span><span class="auto-tag auto-yes">✅ 90%</span></div>
+<div class="stage-row"><span class="badge">11</span><span>QA pass (spintax, cert-as-firstname, sales-voice scrub)</span><span class="time">1-2h</span><span class="auto-tag auto-yes">✅ 85%</span></div>
+<div class="stage-row"><span class="badge">12</span><span>Instantly campaign provisioning</span><span class="time">30m</span><span class="auto-tag auto-yes">✅ 95%</span></div>
+<div class="stage-row"><span class="badge">13</span><span>UTM tagging + tracking instrumentation</span><span class="time">30m</span><span class="auto-tag auto-yes">✅ 95%</span></div>
+<div class="stage-row"><span class="badge">14</span><span>Send-volume scheduling + warmup-state monitoring</span><span class="time">1h/wk</span><span class="auto-tag auto-yes">✅ 95%</span></div>
+<div class="stage-row"><span class="badge">15</span><span>Daily deliverability monitoring (bounces, spam complaints)</span><span class="time">1h/wk</span><span class="auto-tag auto-yes">✅ 90%</span></div>
+<div class="stage-row"><span class="badge">16</span><span>Live campaign activation + hotfixes</span><span class="time">2-4h</span><span class="auto-tag auto-partial">⚠ 70%</span></div>
+<div class="stage-row"><span class="badge">17</span><span>Weekly client reporting + Slack updates</span><span class="time">1h/wk</span><span class="auto-tag auto-yes">✅ 85%</span></div>
+<div class="stage-row"><span class="badge">18</span><span>Mid-campaign copy iteration (round 2-N feedback)</span><span class="time">2-8h</span><span class="auto-tag auto-no">❌ Manual</span></div>
+<div class="stage-row"><span class="badge">19</span><span>Reply handling + qualification</span><span class="time">1-3h/wk</span><span class="auto-tag auto-partial">⚠ 50%</span></div>
+<div class="stage-row"><span class="badge">20</span><span>Post-engagement retro + recipe extraction → KG</span><span class="time">2h</span><span class="auto-tag auto-partial">⚠ 60%</span></div>
+
+<div class="callout real" style="margin-top:18px">
+<h5>Stage 9 is the wedge</h5>
+<p>Stages 09 + 18 (copy iteration with the client) consume the most Phillip-hours and are the LEAST automatable. Aakash had 5-6 explicit contradictions across 4 rounds. Denzil's pivot from "thesis" to "faster sales / onboarding" couldn't have been pre-empted. This is where the agency margin lives — see <a href="#l7" style="color:var(--accent)">Lesson 7</a>.</p>
+</div>
+</div>
+</details>
+
+
+<details class="deep-card" id="deep-pricing-tree">
+<summary>Pricing decision tree · who we take, who we refuse <span class="meta">Click to expand · client filter rules</span></summary>
+<div class="deep-body">
+<p style="color:var(--text-2);font-size:14px">Rule-based client filter. Originally codified May 12 standup; refined after Aakash v2 (performance pricing for low-ACV).</p>
+
+<div style="background:rgba(95,184,120,0.06);border-left:3px solid var(--green);padding:14px 18px;margin:10px 0;border-radius:0 6px 6px 0">
+<p style="margin:0"><strong style="color:var(--green)">if client.ACV ≥ $100K</strong> → take · outcome-based pricing OK</p>
+<p style="font-size:13px;color:var(--text-2);margin:6px 0 0">One deal pays for the entire engagement. $5-10K/mo retainer + per-meeting bonus. Example: enterprise SaaS targeting Fortune 500.</p>
+</div>
+
+<div style="background:rgba(95,184,120,0.06);border-left:3px solid var(--green);padding:14px 18px;margin:10px 0;border-radius:0 6px 6px 0">
+<p style="margin:0"><strong style="color:var(--green)">if $5K ≤ client.ACV &lt; $100K</strong> → take · standard retainer</p>
+<p style="font-size:13px;color:var(--text-2);margin:6px 0 0">Cardinal's sweet spot. $2-5K/mo retainer + per-meeting bonus. Need ~5-10% conversion to pencil for both sides. Example: mid-market B2B SaaS, professional services firms. <strong>This is also where Smarty Multi-Niche sits at $1,550-3,600/mo.</strong></p>
+</div>
+
+<div style="background:rgba(212,168,67,0.06);border-left:3px solid var(--yellow);padding:14px 18px;margin:10px 0;border-radius:0 6px 6px 0">
+<p style="margin:0"><strong style="color:var(--yellow)">if client.ACV &lt; $5K</strong> → take ONLY with performance pricing (new template post-Aakash v2)</p>
+<p style="font-size:13px;color:var(--text-2);margin:6px 0 0">Flat retainers don't work at low ACV — the math breaks. Aakash v2 template: $1K base + $500/paid customer + 30/60/90 checkpoints. Both sides flex on real conversion data. Don't take low-ACV clients on flat retainer; we did it once (Aakash v1) and learned.</p>
+</div>
+
+<div style="background:rgba(107,168,212,0.06);border-left:3px solid var(--blue);padding:14px 18px;margin:10px 0;border-radius:0 6px 6px 0">
+<p style="margin:0"><strong style="color:var(--blue)">special case: pre-revenue YC / VC-backed</strong> → maybe · validate by funding, not ACV</p>
+<p style="font-size:13px;color:var(--text-2);margin:6px 0 0">VC-backed companies with no ACV yet but real budget. Use $1.5-2K/mo floor + per-meeting → forces them to qualify the spend. Cardinal's $2K floor was useful here.</p>
+</div>
+
+<div class="callout">
+<h5>The Vishal-abuse pattern (still applies)</h5>
+<p>Clients given unlimited email volume will abuse it. Vishal example: <em>"He seems like the type who'd want to reach out to every VP, then every PM, then everyone on the team. Give him 1K leads, he wants another 1K."</em></p>
+<p>Per-email-inbox pricing creates a natural volume cap. Client controls how many leads they reach by paying for mailbox capacity. Forces ICP discipline.</p>
+</div>
+</div>
+</details>
+
+
+<details class="deep-card" id="deep-bugs">
+<summary>Bugs that shipped to production · with counts <span class="meta">Click to expand · QA framework lessons</span></summary>
+<div class="deep-body">
+<p style="color:var(--text-2);font-size:14px">All caught (eventually). The April 21 audit + <code>skylarq-qa.py</code> framework caught most. Aakash's review caught the rest.</p>
+
+<table>
+<thead><tr><th>Bug</th><th>Count</th><th>Caught by</th><th>Fix</th></tr></thead>
+<tbody>
+<tr><td>Spintax leaks (<code>{{var}}</code> rendered literally)</td><td class="num">24</td><td>April 21 audit</td><td><code>skylarq-qa.py</code> spintax detector</td></tr>
+<tr><td>Cert-as-firstname (certification name used as first name)</td><td class="num">14</td><td>April 21 audit</td><td>Render pipeline scrub before send</td></tr>
+<tr><td>Sales-voice slips in personalization lines</td><td class="num">112</td><td>Aakash v2 round 3</td><td>Sales-voice scrubber added to render pipeline</td></tr>
+<tr><td>Step-delay bug (E1+E2 sent within 16 min)</td><td class="num">542 leads</td><td>Mid-flight on May 11 launch</td><td>Step-delay semantics audit pre-launch (now mandatory)</td></tr>
+<tr><td>Hallucination: "NBA" rendered for Niles Bolton Associates</td><td class="num">1</td><td>Aakash review</td><td>Abbreviation-collision detection in QA framework</td></tr>
+<tr><td>Hallucination: "Lifestyle 37" truncation</td><td class="num">1</td><td>Aakash review</td><td>Same — abbreviation-collision detection</td></tr>
+<tr><td>http→https URL mismatch</td><td class="num">3 campaigns</td><td>Phillip 30 sec before launch</td><td>URL canonicalization in render pipeline</td></tr>
+<tr><td>Empty <code>{first_name}</code> token rendering ("Hi ,")</td><td class="num">~30 IFE leads</td><td>Post-IFE audit</td><td>Pre-flight enrichment completeness check</td></tr>
+</tbody>
+</table>
+
+<div class="callout">
+<h5>Honest framing</h5>
+<p>The QA framework is real but not done. Each new client surfaces a new bug pattern (Aakash → spintax; Smarty → empty tokens; Vishal → no bugs yet because Ironleap KG-gap means we can't audit). Treat QA as a moving target, not a checklist.</p>
+</div>
+</div>
+</details>
+
+
+</section>
+
+
+<section id="archive">
+<h2><span class="num">A</span> Historical archive (v3 / v4 / v4.1)</h2>
+
+<p>Previous editions of this doc — kept for narrative continuity and to show how the strategy evolved.</p>
+
+<div class="callout">
+<h5>Where to find the older versions</h5>
+<p><a href="./index-v4-archive.html" style="color:var(--accent)"><strong>index-v4-archive.html</strong></a> — full v3 / v4 / v4.1 doc (1,791 lines). Contains:</p>
+<ul class="std">
+  <li><strong>v3 (2026-05-12)</strong> — single-client meta-analysis after Aakash paid the first $2K. 20-stage workflow breakdown, automation matrix, "service vs VC-backable" debate, Cardinal $2K floor benchmark, pricing decision tree.</li>
+  <li><strong>v4 (2026-05-20 morning)</strong> — portfolio expansion to 4 clients, per-client case studies (06 InspectMind / 06A Vishal / 06B Denzil / 06C Emmie), cross-client patterns (06D), Customer OS section (06E). Synthesized from memory + jsonls + proposal docs.</li>
+  <li><strong>v4.1 (2026-05-20 evening)</strong> — KG-sourced corrections: Aakash v2 deal terms locked, Denzil mailbox decision, Yuzulabs as prospect in KG, Ironleap KG gap flagged. First doc synthesized partly from live KG queries.</li>
+</ul>
+</div>
+
+<h3>What got dropped from v3 / v4 in this v5 rewrite</h3>
+<ul class="std">
+  <li><strong>20-stage workflow detail.</strong> Was useful as an internal map but too in-the-weeds for the lessons-first reframe. Still in the archive.</li>
+  <li><strong>"Service vs VC-backable" central debate.</strong> Resolved by the 4-client reality — we're a service with a compounding KG moat. The next question (can we run 4+ parallel without dropping balls) is in <a href="#tldr">TL;DR</a>.</li>
+  <li><strong>Cardinal $2K floor anchor.</strong> Was the right reference point for v3 when we'd just hit our first external revenue. Now we're priced higher and selling multi-channel — the anchor moved.</li>
+  <li><strong>Per-stage automation matrix.</strong> Compressed into Lesson 7 (judgment layer = human).</li>
+  <li><strong>Most of the chronological timeline.</strong> Highlights woven into Lesson 1 and the client status table.</li>
+</ul>
+
+<h3>Where v5 stays true to v3</h3>
+<ul class="std">
+  <li>Brutal honesty about deliverability not being solved (Lesson 11) and judgment layer not being automatable (Lesson 7) — v3 surfaced both first.</li>
+  <li>"We eat blame regardless of client decisions" — folded into Lesson 5 ("made it right" mode) and Lesson 7. v3 framing was defensive; v5 framing is operational.</li>
+</ul>
+</section>
+
+
+<p style="margin-top:48px;color:var(--text-3);font-size:13px;text-align:center;padding-top:32px;border-top:1px solid var(--border)">
+v5 · 2026-05-20 · lessons-first rewrite · synthesized from memory + jsonls + live Customer OS KG queries · update when the next material lesson lands (mid-June check-in after FGMC research + Snowflake Summit + Vishal pilot all hit)
+</p>
+
+</main>
+</div>
+</div>
+
+<script>
+function showTab(e, id) {
+  e.target.parentElement.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  e.target.classList.add('active');
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('nav a[href^="#"]');
+function highlightNav() {
+  let current = '';
+  sections.forEach(s => { if (window.scrollY >= s.offsetTop - 100) current = s.id; });
+  navLinks.forEach(l => {
+    l.style.color = ''; l.style.background = '';
+    if (l.getAttribute('href') === '#' + current) {
+      l.style.color = 'var(--accent)'; l.style.background = 'var(--bg-3)';
+    }
+  });
+}
+window.addEventListener('scroll', highlightNav);
+highlightNav();
+
+// Password gate
+const GATE_HASH = "1a1e61a092638d456e92a7d32fae5760b10607ae40a23c80446ea8cffdf7f332";
+async function sha256(s) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+async function checkPassword(e) {
+  if (e) e.preventDefault();
+  const v = document.getElementById("gate-input").value;
+  const h = await sha256(v);
+  if (h === GATE_HASH) {
+    sessionStorage.setItem("gate-unlocked", "1");
+    document.getElementById("gate").style.display = "none";
+    document.getElementById("content").style.display = "block";
+  } else {
+    document.getElementById("gate-error").textContent = "Incorrect.";
+    document.getElementById("gate-input").value = "";
+  }
+  return false;
+}
+if (sessionStorage.getItem("gate-unlocked") === "1") {
+  document.getElementById("gate").style.display = "none";
+  document.getElementById("content").style.display = "block";
+}
+</script>
+</body>
+</html>
