@@ -337,10 +337,21 @@
   <!-- ADVANCED -->
   <button class="advanced-toggle" onclick="toggleAdvanced()" id="advBtn">⚙ Advanced settings</button>
   <div id="advPanel" style="display:none">
-    <div class="section-label" style="margin-top:14px">Brief refresh tuning</div>
+    <div class="section-label" style="margin-top:14px">Refresh engine</div>
+    <div class="mode-toggle" style="margin-bottom:10px">
+      <button class="mode-btn active" onclick="setRefreshMode('optimized',this)">Optimized</button>
+      <button class="mode-btn" onclick="setRefreshMode('naive',this)">Naive</button>
+    </div>
+    <div class="sub" style="margin-bottom:10px"><strong style="color:#94a3b8">Optimized:</strong> each cycle = cheap Haiku check; full Sonnet brief only on real signal. <strong style="color:#94a3b8">Naive:</strong> full Sonnet brief every cycle (~2× cost).</div>
+    <div class="param-row" id="signalRow">
+      <label>Signal rate — cycles that trigger a deep brief <span class="val" id="val-signalRate">30%</span></label>
+      <input type="range" id="signalRate" min="0.05" max="1" step="0.05" value="0.3" oninput="update()">
+      <div class="sub">What fraction of checks find real news worth a full Sonnet brief.</div>
+    </div>
     <div class="param-row">
       <label>Refreshes / active company / day <span class="val" id="val-refreshMultiplier">1.5</span></label>
       <input type="range" id="refreshMultiplier" min="0.5" max="11" step="0.5" value="1.5" oninput="update()">
+      <div class="sub">A "cycle" = one of these checks. Cycles/mo = active × this × 30.</div>
     </div>
     <div class="param-row">
       <label>Avg brief length (tokens) <span class="val" id="val-briefTokens">1,500</span></label>
@@ -478,7 +489,7 @@
 
     <div id="valueControls">
       <div class="value-inputs">
-        <div><label>Base $ / seat / mo</label><input type="number" id="baseSeat" value="99" oninput="update()"></div>
+        <div><label>Base $ / seat / mo</label><input type="number" id="baseSeat" value="149" oninput="update()"></div>
         <div><label>Included active / seat</label><input type="number" id="includedActive" value="15" oninput="update()"></div>
         <div><label>$ / extra active company</label><input type="number" id="overageRate" value="12" oninput="update()"></div>
         <div><label>Outbound add-on $/acct</label><input type="number" id="outboundAddon" value="249" oninput="update()"></div>
@@ -524,6 +535,7 @@ let currentMode    = 'api';
 let pricingMode    = 'value';
 let outboundOn     = false;
 let whisperHosted  = false;
+let refreshMode    = 'optimized';   // 'optimized' (Haiku check + signal-gated Sonnet) | 'naive' (full Sonnet every cycle)
 let sharedTools    = true;   // Instantly amortized across all accounts by default (agency workspace)
 
 const ACTIVITY = {
@@ -535,10 +547,10 @@ const ACTIVITY = {
 
 // activePct = active companies as fraction of tracked (drives the tier presets too)
 const TIER_DEFS = [
-  { name:'Starter', companies:30,  activeCompanies:3,  usersPerAccount:1, meetingsPerWeek:1,  activity:'quiet'  },
-  { name:'Growth',  companies:100, activeCompanies:10, usersPerAccount:2, meetingsPerWeek:3,  activity:'normal' },
-  { name:'Pro',     companies:250, activeCompanies:25, usersPerAccount:3, meetingsPerWeek:8,  activity:'busy'   },
-  { name:'Power',   companies:500, activeCompanies:60, usersPerAccount:5, meetingsPerWeek:15, activity:'heavy'  },
+  { name:'Starter', companies:150,  activeCompanies:20,  usersPerAccount:1,  meetingsPerWeek:2,  activity:'quiet'  },
+  { name:'Growth',  companies:400,  activeCompanies:60,  usersPerAccount:3,  meetingsPerWeek:8,  activity:'normal' },
+  { name:'Pro',     companies:1000, activeCompanies:200, usersPerAccount:8,  meetingsPerWeek:25, activity:'busy'   },
+  { name:'Power',   companies:2000, activeCompanies:600, usersPerAccount:20, meetingsPerWeek:60, activity:'heavy'  },
 ];
 
 let pieChart=null, lineChart=null, tornadoChart=null;
@@ -551,6 +563,13 @@ function setMode(mode, btn){
   document.querySelectorAll('.controls .mode-toggle:first-of-type .mode-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('maxPlanBox').style.display = mode==='maxplan'?'block':'none';
+  update();
+}
+function setRefreshMode(m, btn){
+  refreshMode = m;
+  btn.parentElement.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('signalRow').style.display = (m==='optimized') ? 'block' : 'none';
   update();
 }
 function setPricing(mode, btn){
@@ -620,7 +639,7 @@ function computeCosts(p){
           refreshMultiplier, briefTokens, forceRefreshesPerMonth,
           whisperHosted:wh, whisperPerMin,
           bytesPerVector, rawBytesPerChunk, chunkTokens, retentionMonths,
-          mode, maxPlanCeiling } = p;
+          mode, maxPlanCeiling, refreshMode, signalRate } = p;
   const { pSonnetIn, pSonnetOut, pHaikuIn, pHaikuOut, pEmbed } = p.prices;
   const upa  = Math.max(1, usersPerAccount || 1);
   const DAYS = 30;
@@ -628,11 +647,21 @@ function computeCosts(p){
   const meetingsPerMonth = (meetingsPerWeek || 0) * 4.33;
   const active = Math.max(0, activeCompanies || 0);
 
-  // Brief refresh (Sonnet) — dominant variable cost, driven by ACTIVE companies
-  const briefCallsPerMonth = active * Math.min(refreshMultiplier, 11) * DAYS;
+  // Brief refresh. A "research cycle" = one time the AI checks an active deal for new info.
+  //   NAIVE     : every cycle runs a full Sonnet deep brief (expensive).
+  //   OPTIMIZED : every cycle is a cheap Haiku "did anything change?" check; only `signalRate`
+  //               of them escalate to a full Sonnet deep brief when there's real signal.
+  const isOpt = (mode !== 'maxplan') && (refreshMode === 'optimized');
+  const briefCallsPerMonth = active * Math.min(refreshMultiplier, 11) * DAYS;   // = research cycles/mo
   const briefInputPerCall  = 820 + briefTokens + 8*200 + 8*375;
   const briefOutputPerCall = Math.max(briefTokens + 300, 1800);
-  const briefCostRaw = briefCallsPerMonth * (briefInputPerCall/1e6*pSonnetIn + briefOutputPerCall/1e6*pSonnetOut);
+  const sonnetBriefUnit = briefInputPerCall/1e6*pSonnetIn + briefOutputPerCall/1e6*pSonnetOut;
+  const checkTin = 400, checkTout = 80;                                         // Haiku change-check
+  const checkUnit = checkTin/1e6*pHaikuIn + checkTout/1e6*pHaikuOut;
+  const sr = (refreshMode === 'optimized') ? Math.max(0, Math.min(1, signalRate)) : 1;
+  const deepBriefs = (refreshMode === 'optimized') ? briefCallsPerMonth * sr : briefCallsPerMonth;
+  const checks     = (refreshMode === 'optimized') ? briefCallsPerMonth : 0;
+  const briefCostRaw = checks*checkUnit + deepBriefs*sonnetBriefUnit;
   const forceCallsPerMonth = forceRefreshesPerMonth * 5;
   const forceCostRaw = forceCallsPerMonth * ((820+briefTokens+50*200+20*375)/1e6*pSonnetIn + briefOutputPerCall/1e6*pSonnetOut);
   const totalBriefCostRaw = briefCostRaw + forceCostRaw;
@@ -640,7 +669,7 @@ function computeCosts(p){
   // Max Plan: briefs run on the VM subscription, so per-token brief cost is $0.
   // The subscription is a STEP FUNCTION billed at the business level (see costNum), not here.
   const briefTokPerCall  = briefInputPerCall + briefOutputPerCall;
-  const briefTokPerMonth = briefCallsPerMonth * briefTokPerCall;
+  const briefTokPerMonth = deepBriefs*briefTokPerCall + checks*(checkTin+checkTout);
   const briefCost  = isMax ? 0 : totalBriefCostRaw;
 
   // Slack summarization (Haiku) — only channels with new activity
@@ -680,7 +709,6 @@ function computeCosts(p){
   const totalAI = briefCost + slackSumCost + meetingsCost + whisperCost + personalizationCost + outboundQACost + embedCost;
 
   // ---- Bottom-up: cost of ONE of each AI operation (atomic unit economics) ----
-  const briefUnit = briefInputPerCall/1e6*pSonnetIn + briefOutputPerCall/1e6*pSonnetOut;
   const forceTin  = 820+briefTokens+50*200+20*375;
   const forceUnit = forceTin/1e6*pSonnetIn + briefOutputPerCall/1e6*pSonnetOut;
   const slackTin  = chunksPerSync*(500 + charsPerSync/4), slackTout = chunksPerSync*256;
@@ -688,14 +716,23 @@ function computeCosts(p){
   const mtgTin = (200+transcriptTok)+(300+transcriptTok*2), mtgTout = 2000+transcriptTok;
   const mtgUnit = (mtgTin/1e6*pHaikuIn + mtgTout/1e6*pHaikuOut) + (wh ? meetingMins*(whisperPerMin||0) : 0);
   const obUnit  = (2800/1e6*pSonnetIn+280/1e6*pSonnetOut) + (700/1e6*pHaikuIn+200/1e6*pHaikuOut);
+  const briefAtoms = (refreshMode === 'optimized')
+    ? [
+        { label:'Deal check (cycle — did anything change?)', model:'Haiku 4.5', tin:checkTin, tout:checkTout, unit:checkUnit, count:checks, paid: isMax?0:checks*checkUnit },
+        { label:'Deep brief (Sonnet, on real signal)', model: isMax?'Max Plan (VM)':'Sonnet 4.6', tin:briefInputPerCall, tout:briefOutputPerCall, unit:sonnetBriefUnit, count:deepBriefs, paid: isMax?0:deepBriefs*sonnetBriefUnit },
+      ]
+    : [
+        { label:'Brief refresh (1 cycle = full Sonnet brief)', model: isMax?'Max Plan (VM)':'Sonnet 4.6', tin:briefInputPerCall, tout:briefOutputPerCall, unit:sonnetBriefUnit, count:briefCallsPerMonth, paid: isMax?0:briefCallsPerMonth*sonnetBriefUnit },
+      ];
   const atoms = [
-    { label:'Brief refresh (1 AI research cycle)', model: isMax?'Max Plan (VM)':'Sonnet 4.6', tin:briefInputPerCall, tout:briefOutputPerCall, unit:briefUnit, count:briefCallsPerMonth, paid: isMax?0:briefCostRaw },
+    ...briefAtoms,
     { label:'Force re-sync', model:'Sonnet 4.6', tin:forceTin, tout:briefOutputPerCall, unit:forceUnit, count:forceCallsPerMonth, paid: isMax?0:forceCostRaw },
     { label:'Slack digest (1 channel sync)', model:'Haiku 4.5', tin:slackTin, tout:slackTout, unit:slackUnit, count:activeChSyncs, paid:slackSumCost },
-    { label:'Meeting (transcribe+structure+dedup)', model: wh?'Haiku + Whisper':'Haiku 4.5', tin:mtgTin, tout:mtgTout, unit:mtgUnit, count:meetingsPerMonth, paid:meetingsCost+whisperCost },
+    { label:'Meeting (Granola transcript + structure)', model: wh?'Haiku + Whisper':'Haiku 4.5', tin:mtgTin, tout:mtgTout, unit:mtgUnit, count:meetingsPerMonth, paid:meetingsCost+whisperCost },
     { label:'Outbound (personalize + QA)', model:'Sonnet + Haiku', tin:3500, tout:480, unit:obUnit, count:prospects, paid:personalizationCost+outboundQACost },
     { label:'Embeddings', model:'text-embedding-3-small', tin:0, tout:0, unit:pEmbed/1e6, count:embedTok, paid:embedCost, isTok:true },
   ].filter(a => a.count > 0);
+  const researchCyclesPerMonth = briefCallsPerMonth;
 
   return {
     atoms,
@@ -706,7 +743,7 @@ function computeCosts(p){
     personalization:{ cost: personalizationCost, label:'Outbound personalization', model:'Sonnet 4.6', vol:`${prospects.toLocaleString()} prospects` },
     outboundQA:   { cost: outboundQACost,   label:'Outbound QA', model:'Haiku 4.5', vol:`${prospects.toLocaleString()} drafts` },
     embed:        { cost: embedCost,        label:'Embeddings', model:'text-embedding-3-small', vol:`${Math.round(embedTok/1000)}K tokens` },
-    totalAI, storageGB, briefTokPerMonth, totalBriefCostRaw, briefCallsPerMonth,
+    totalAI, storageGB, briefTokPerMonth, totalBriefCostRaw, briefCallsPerMonth, deepBriefs, checks,
   };
 }
 
@@ -742,6 +779,7 @@ function readParams(){
     retentionMonths: getNum('retentionMonths'),
     maxPlanCeiling: isMax ? getNum('maxPlanCeiling') : 10,
     mode: currentMode,
+    refreshMode, signalRate: getNum('signalRate'),
     prices: {
       pSonnetIn: getNum('pSonnetIn'), pSonnetOut: getNum('pSonnetOut'),
       pHaikuIn: getNum('pHaikuIn'),   pHaikuOut: getNum('pHaikuOut'),
@@ -803,6 +841,7 @@ function update(){
   document.getElementById('val-meetingMins').textContent     = p.meetingMins;
   if(outboundOn) document.getElementById('val-outboundProspects').textContent = getInt('outboundProspects').toLocaleString();
   document.getElementById('val-refreshMultiplier').textContent     = p.refreshMultiplier.toFixed(1);
+  document.getElementById('val-signalRate').textContent            = Math.round(getNum('signalRate')*100)+'%';
   document.getElementById('val-briefTokens').textContent           = p.briefTokens.toLocaleString();
   document.getElementById('val-forceRefreshesPerMonth').textContent= p.forceRefreshesPerMonth;
 
@@ -916,9 +955,12 @@ function update(){
     return `<tr><td>${a.label}</td><td style="color:#475569">${a.model}</td><td style="color:#475569">${toks}</td><td>${unit}</td><td style="color:#94a3b8">${cnt}</td><td>${fmt(a.paid)}</td></tr>`;
   }).join('') + `<tr class="grand-total"><td colspan="5">Variable AI total</td><td>${fmt(atomTotal)}</td></tr>`;
   const topAtom = [...c.atoms].sort((a,b)=>b.paid-a.paid)[0] || {label:'—',unit:0,paid:0};
+  const cyc = Math.round(c.briefCallsPerMonth);
   document.getElementById('unitEconNote').innerHTML =
-    `Every cost = <strong>operations × unit cost</strong>. The expensive atom is the <strong>${topAtom.label.replace(/ \(.*/,'')}</strong> at <strong>${fmt(topAtom.unit)} each</strong> (${atomTotal>0?Math.round(topAtom.paid/atomTotal*100):0}% of AI cost). ` +
-    `Cap or meter on <strong>AI research cycles</strong> (countable operations) rather than the fuzzy "active companies" — same economics, but a real, auditable unit.`;
+    `<strong>A "research cycle" = one time the AI checks one active deal.</strong> This account runs <strong>${cyc.toLocaleString()} cycles/mo</strong> (active companies × refreshes/day × 30)` +
+    (refreshMode==='optimized' ? `, of which <strong>${Math.round(c.deepBriefs).toLocaleString()}</strong> escalate to a full Sonnet brief (the rest are cheap Haiku checks).` : ` — each a full Sonnet brief (naive engine).`) +
+    ` Slack digests, meetings (Granola), outbound and embeds are <em>separate</em> operations — each counted above. ` +
+    `Bill/cap on <strong>research cycles</strong> (countable, auditable) instead of the fuzzy "active companies."`;
 
   const COLORS=['#4f6ef7','#a78bfa','#34d399','#f472b6','#fbbf24','#22d3ee','#94a3b8'];
   const aiItems=[c.brief,c.slackSum,c.meetings,c.whisper,c.personalization,c.outboundQA,c.embed].filter(x=>x.cost>0.0005);
@@ -991,6 +1033,8 @@ function update(){
     {label:'Slack volume',     low:costWith({slackMsgs:p.slackMsgs*0.5}),  high:costWith({slackMsgs:p.slackMsgs*2})},
     {label:'Meetings/wk',      low:costWith({meetingsPerWeek:Math.max(0,p.meetingsPerWeek*0.5)}), high:costWith({meetingsPerWeek:p.meetingsPerWeek*2})},
     {label:'Seats',            low:costWith({usersPerAccount:Math.max(1,p.usersPerAccount-1)}),    high:costWith({usersPerAccount:p.usersPerAccount+3})},
+    ...(refreshMode==='optimized' ? [{label:'Signal rate', low:costWith({signalRate:Math.max(0.05,p.signalRate*0.5)}), high:costWith({signalRate:Math.min(1,p.signalRate*2)})}] : []),
+    {label:'Refresh engine', low:costWith({refreshMode:'optimized', signalRate:p.signalRate}), high:costWith({refreshMode:'naive'})},
   ].map(d=>({...d,range:Math.abs(d.high-d.low)})).sort((a,b)=>a.range-b.range);
   document.getElementById('tornadoSub').textContent=`baseline cost/account = ${fmt(base)} (dashed line). Longest bar = biggest lever.`;
   const tLabels=sens.map(s=>s.label);
