@@ -439,9 +439,21 @@
     <div class="callout" id="tornadoCallout"></div>
   </div>
 
+  <div class="breakdown-table" style="margin-bottom:8px">
+    <table>
+      <thead>
+        <tr><th colspan="6" style="color:#a5b4fc;font-size:11px">Bottom-up unit economics — cost of each AI operation</th></tr>
+        <tr><th>AI operation</th><th>Model</th><th>Tokens in/out</th><th>$ / operation</th><th>Count/mo</th><th>$/mo</th></tr>
+      </thead>
+      <tbody id="unitEconBody"></tbody>
+    </table>
+  </div>
+  <div class="callout" id="unitEconNote" style="margin-bottom:18px"></div>
+
   <div class="breakdown-table">
     <table>
       <thead>
+        <tr><th colspan="5" style="color:#64748b;font-size:11px">Rolled-up cost per account</th></tr>
         <tr><th>What</th><th>How</th><th>Volume/mo</th><th>%</th><th>$/mo</th></tr>
       </thead>
       <tbody id="breakdownBody"></tbody>
@@ -667,7 +679,26 @@ function computeCosts(p){
 
   const totalAI = briefCost + slackSumCost + meetingsCost + whisperCost + personalizationCost + outboundQACost + embedCost;
 
+  // ---- Bottom-up: cost of ONE of each AI operation (atomic unit economics) ----
+  const briefUnit = briefInputPerCall/1e6*pSonnetIn + briefOutputPerCall/1e6*pSonnetOut;
+  const forceTin  = 820+briefTokens+50*200+20*375;
+  const forceUnit = forceTin/1e6*pSonnetIn + briefOutputPerCall/1e6*pSonnetOut;
+  const slackTin  = chunksPerSync*(500 + charsPerSync/4), slackTout = chunksPerSync*256;
+  const slackUnit = slackTin/1e6*pHaikuIn + slackTout/1e6*pHaikuOut;
+  const mtgTin = (200+transcriptTok)+(300+transcriptTok*2), mtgTout = 2000+transcriptTok;
+  const mtgUnit = (mtgTin/1e6*pHaikuIn + mtgTout/1e6*pHaikuOut) + (wh ? meetingMins*(whisperPerMin||0) : 0);
+  const obUnit  = (2800/1e6*pSonnetIn+280/1e6*pSonnetOut) + (700/1e6*pHaikuIn+200/1e6*pHaikuOut);
+  const atoms = [
+    { label:'Brief refresh (1 AI research cycle)', model: isMax?'Max Plan (VM)':'Sonnet 4.6', tin:briefInputPerCall, tout:briefOutputPerCall, unit:briefUnit, count:briefCallsPerMonth, paid: isMax?0:briefCostRaw },
+    { label:'Force re-sync', model:'Sonnet 4.6', tin:forceTin, tout:briefOutputPerCall, unit:forceUnit, count:forceCallsPerMonth, paid: isMax?0:forceCostRaw },
+    { label:'Slack digest (1 channel sync)', model:'Haiku 4.5', tin:slackTin, tout:slackTout, unit:slackUnit, count:activeChSyncs, paid:slackSumCost },
+    { label:'Meeting (transcribe+structure+dedup)', model: wh?'Haiku + Whisper':'Haiku 4.5', tin:mtgTin, tout:mtgTout, unit:mtgUnit, count:meetingsPerMonth, paid:meetingsCost+whisperCost },
+    { label:'Outbound (personalize + QA)', model:'Sonnet + Haiku', tin:3500, tout:480, unit:obUnit, count:prospects, paid:personalizationCost+outboundQACost },
+    { label:'Embeddings', model:'text-embedding-3-small', tin:0, tout:0, unit:pEmbed/1e6, count:embedTok, paid:embedCost, isTok:true },
+  ].filter(a => a.count > 0);
+
   return {
+    atoms,
     brief:        { cost: briefCost,        label: isMax?'Brief refresh (Max Plan)':'Brief refresh', model: isMax?'Claude Code Max Plan':'Sonnet 4.6', vol:`${Math.round(briefCallsPerMonth).toLocaleString()} calls` },
     slackSum:     { cost: slackSumCost,     label:'Slack summarization', model:'Haiku 4.5', vol:`${Math.round(activeChSyncs).toLocaleString()} syncs` },
     meetings:     { cost: meetingsCost,     label:'Meeting structuring', model:'Haiku 4.5', vol:`${meetingsPerMonth.toFixed(0)} meetings` },
@@ -876,6 +907,19 @@ function update(){
     ` &nbsp;·&nbsp; Path to $1M ARR: <strong>${isFinite(acctsTo1M)?acctsTo1M.toLocaleString():'—'}</strong> accounts${savedNote}`;
 
   // Breakdown table
+  // Bottom-up unit-economics table
+  const atomTotal = c.atoms.reduce((s,a)=>s+a.paid,0);
+  document.getElementById('unitEconBody').innerHTML = c.atoms.map(a=>{
+    const toks = a.isTok ? `${(a.count/1e6).toFixed(2)}M` : `${Math.round(a.tin).toLocaleString()}/${Math.round(a.tout).toLocaleString()}`;
+    const unit = a.isTok ? '$'+(a.unit*1e6).toFixed(2)+'/M' : fmt(a.unit);
+    const cnt  = a.isTok ? '—' : Math.round(a.count).toLocaleString();
+    return `<tr><td>${a.label}</td><td style="color:#475569">${a.model}</td><td style="color:#475569">${toks}</td><td>${unit}</td><td style="color:#94a3b8">${cnt}</td><td>${fmt(a.paid)}</td></tr>`;
+  }).join('') + `<tr class="grand-total"><td colspan="5">Variable AI total</td><td>${fmt(atomTotal)}</td></tr>`;
+  const topAtom = [...c.atoms].sort((a,b)=>b.paid-a.paid)[0] || {label:'—',unit:0,paid:0};
+  document.getElementById('unitEconNote').innerHTML =
+    `Every cost = <strong>operations × unit cost</strong>. The expensive atom is the <strong>${topAtom.label.replace(/ \(.*/,'')}</strong> at <strong>${fmt(topAtom.unit)} each</strong> (${atomTotal>0?Math.round(topAtom.paid/atomTotal*100):0}% of AI cost). ` +
+    `Cap or meter on <strong>AI research cycles</strong> (countable operations) rather than the fuzzy "active companies" — same economics, but a real, auditable unit.`;
+
   const COLORS=['#4f6ef7','#a78bfa','#34d399','#f472b6','#fbbf24','#22d3ee','#94a3b8'];
   const aiItems=[c.brief,c.slackSum,c.meetings,c.whisper,c.personalization,c.outboundQA,c.embed].filter(x=>x.cost>0.0005);
   let html=aiItems.map((item,i)=>{
