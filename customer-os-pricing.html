@@ -204,7 +204,7 @@
   <div id="maxPlanBox" style="display:none">
     <div class="maxplan-box">
       <div class="tos-warn"><strong>⚠ ToS risk:</strong> running multi-tenant customer workloads on a personal/team Max subscription may violate Anthropic's terms. Treat this as an internal margin lever, not a pricing foundation.</div>
-      <p><strong>Step function:</strong> each plan is a fixed block with a fixed token ceiling. When aggregate brief demand across all accounts exceeds one plan, you buy <em>another whole plan</em> — cost jumps in $-increments, it doesn't spill smoothly.</p>
+      <p><strong>Covers ALL Claude work</strong> (briefs, Slack, meetings, outbound) on the VM at $0 per-token — only OpenAI embeddings + hosted Whisper stay paid. <strong>Step function:</strong> each plan holds a fixed Claude-token ceiling; when total demand across accounts exceeds it you buy <em>another whole plan</em> — cost jumps in increments, no smooth spill.</p>
       <div class="two-col">
         <div>
           <label>Cost per plan $/mo</label>
@@ -212,9 +212,9 @@
           <div class="sub" style="margin-top:3px">$100 (5×) · $200 (20×)</div>
         </div>
         <div>
-          <label>Tokens per plan (M)</label>
-          <input type="number" id="maxPlanCeiling" value="40" min="1" step="1" oninput="update()">
-          <div class="sub" style="margin-top:3px">Anthropic doesn't publish — est. ~40M for $200</div>
+          <label>Claude tokens per plan (M)</label>
+          <input type="number" id="maxPlanCeiling" value="100" min="1" step="1" oninput="update()">
+          <div class="sub" style="margin-top:3px">Est. ~100M/mo for a $200 Max 20× plan run 24/7. Anthropic doesn't publish — <strong style="color:#facc15">verify with real usage</strong>; this sets whether Max beats API.</div>
         </div>
       </div>
       <div class="capacity-bar-wrap">
@@ -708,7 +708,16 @@ function computeCosts(p){
   const gbPerMonth      = bytesPerMonth / 1e9;
   const storageGB       = gbPerMonth * Math.max(0, retentionMonths);  // GB held per account at steady state
 
-  const totalAI = briefCost + slackSumCost + meetingsCost + whisperCost + personalizationCost + outboundQACost + embedCost;
+  // Max Plan covers ALL Claude work on the VM (brief + Slack + meetings + outbound), per-token $0.
+  // Only NON-Claude stays paid: OpenAI embeddings + (optional) hosted Whisper transcription.
+  const claudeApiCost  = totalBriefCostRaw + slackSumCost + meetingsCost + personalizationCost + outboundQACost;
+  const nonClaudeCost  = embedCost + whisperCost;
+  const claudeMult     = isMax ? 0 : 1;   // in Max mode all Claude ops run on the subscription
+  const totalAI = claudeMult*claudeApiCost + nonClaudeCost;
+  // Total Claude token volume that must fit under the Max plan ceiling (all Claude ops, not just briefs)
+  const mtgClaudeTok      = meetingsPerMonth * ((200+transcriptTok)+(300+transcriptTok*2) + 2000+transcriptTok);
+  const outboundClaudeTok = prospects * (2800+280+700+200);
+  const claudeTokPerMonth = briefTokPerMonth + (slackIn+slackOut) + mtgClaudeTok + outboundClaudeTok;
 
   // ---- Bottom-up: cost of ONE of each AI operation (atomic unit economics) ----
   const forceTin  = 820+briefTokens+50*200+20*375;
@@ -728,24 +737,23 @@ function computeCosts(p){
       ];
   const atoms = [
     ...briefAtoms,
-    { label:'Force re-sync', model:'Sonnet 4.6', tin:forceTin, tout:briefOutputPerCall, unit:forceUnit, count:forceCallsPerMonth, paid: isMax?0:forceCostRaw },
-    { label:'Slack digest (1 channel sync)', model:'Haiku 4.5', tin:slackTin, tout:slackTout, unit:slackUnit, count:activeChSyncs, paid:slackSumCost },
-    { label:'Meeting (Granola transcript + structure)', model: wh?'Haiku + Whisper':'Haiku 4.5', tin:mtgTin, tout:mtgTout, unit:mtgUnit, count:meetingsPerMonth, paid:meetingsCost+whisperCost },
-    { label:'Outbound (personalize + QA)', model:'Sonnet + Haiku', tin:3500, tout:480, unit:obUnit, count:prospects, paid:personalizationCost+outboundQACost },
+    { label:'Force re-sync', model: isMax?'Max Plan (VM)':'Sonnet 4.6', tin:forceTin, tout:briefOutputPerCall, unit:forceUnit, count:forceCallsPerMonth, paid: isMax?0:forceCostRaw },
+    { label:'Slack digest (1 channel sync)', model: isMax?'Max Plan (VM)':'Haiku 4.5', tin:slackTin, tout:slackTout, unit:slackUnit, count:activeChSyncs, paid: isMax?0:slackSumCost },
+    { label:'Meeting (Granola transcript + structure)', model: isMax?'Max Plan (VM)':(wh?'Haiku + Whisper':'Haiku 4.5'), tin:mtgTin, tout:mtgTout, unit:mtgUnit, count:meetingsPerMonth, paid: claudeMult*meetingsCost + whisperCost },
+    { label:'Outbound (personalize + QA)', model: isMax?'Max Plan (VM)':'Sonnet + Haiku', tin:3500, tout:480, unit:obUnit, count:prospects, paid: claudeMult*(personalizationCost+outboundQACost) },
     { label:'Embeddings', model:'text-embedding-3-small', tin:0, tout:0, unit:pEmbed/1e6, count:embedTok, paid:embedCost, isTok:true },
   ].filter(a => a.count > 0);
-  const researchCyclesPerMonth = briefCallsPerMonth;
 
   return {
     atoms,
-    brief:        { cost: briefCost,        label: isMax?'Brief refresh (Max Plan)':'Brief refresh', model: isMax?'Claude Code Max Plan':'Sonnet 4.6', vol:`${Math.round(briefCallsPerMonth).toLocaleString()} calls` },
-    slackSum:     { cost: slackSumCost,     label:'Slack summarization', model:'Haiku 4.5', vol:`${Math.round(activeChSyncs).toLocaleString()} syncs` },
-    meetings:     { cost: meetingsCost,     label:'Meeting structuring', model:'Haiku 4.5', vol:`${meetingsPerMonth.toFixed(0)} meetings` },
+    brief:        { cost: claudeMult*totalBriefCostRaw, label: isMax?'Brief (Max Plan VM)':'Brief refresh', model: isMax?'Max Plan':'Sonnet 4.6', vol:`${Math.round(briefCallsPerMonth).toLocaleString()} cycles` },
+    slackSum:     { cost: claudeMult*slackSumCost, label:'Slack summarization', model: isMax?'Max Plan':'Haiku 4.5', vol:`${Math.round(activeChSyncs).toLocaleString()} syncs` },
+    meetings:     { cost: claudeMult*meetingsCost, label:'Meeting structuring', model: isMax?'Max Plan':'Haiku 4.5', vol:`${meetingsPerMonth.toFixed(0)} meetings` },
     whisper:      { cost: whisperCost,      label:'Transcription (hosted)', model:'Whisper', vol:`${Math.round(meetingsPerMonth*meetingMins)} min` },
-    personalization:{ cost: personalizationCost, label:'Outbound personalization', model:'Sonnet 4.6', vol:`${prospects.toLocaleString()} prospects` },
-    outboundQA:   { cost: outboundQACost,   label:'Outbound QA', model:'Haiku 4.5', vol:`${prospects.toLocaleString()} drafts` },
+    personalization:{ cost: claudeMult*personalizationCost, label:'Outbound personalization', model: isMax?'Max Plan':'Sonnet 4.6', vol:`${prospects.toLocaleString()} prospects` },
+    outboundQA:   { cost: claudeMult*outboundQACost,   label:'Outbound QA', model: isMax?'Max Plan':'Haiku 4.5', vol:`${prospects.toLocaleString()} drafts` },
     embed:        { cost: embedCost,        label:'Embeddings', model:'text-embedding-3-small', vol:`${Math.round(embedTok/1000)}K tokens` },
-    totalAI, storageGB, briefTokPerMonth, totalBriefCostRaw, briefCallsPerMonth, deepBriefs, checks,
+    totalAI, storageGB, briefTokPerMonth, claudeTokPerMonth, totalBriefCostRaw, claudeApiCost, briefCallsPerMonth, deepBriefs, checks,
   };
 }
 
@@ -795,7 +803,8 @@ function readParams(){
 function maxPlanStep(c, ctx){
   if(!ctx.isMax) return { plans:0, totalCost:0, perAcct:0, lastFill:0, acctsPerPlan:Infinity };
   const ceil = Math.max(1, ctx.ceilingTok);
-  const totalTok = c.briefTokPerMonth * ctx.payingAccounts;
+  const perAcctTok = c.claudeTokPerMonth;           // ALL Claude tokens run on the VM, not just briefs
+  const totalTok = perAcctTok * ctx.payingAccounts;
   const plans = Math.max(1, Math.ceil(totalTok / ceil));
   const totalCost = plans * ctx.planCost;
   const used = totalTok - (plans-1)*ceil;           // tokens on the last (partial) plan
@@ -803,7 +812,7 @@ function maxPlanStep(c, ctx){
     plans, totalCost,
     perAcct: ctx.payingAccounts>0 ? totalCost/ctx.payingAccounts : totalCost,
     lastFill: Math.min(1, used/ceil),
-    acctsPerPlan: c.briefTokPerMonth>0 ? Math.floor(ceil / c.briefTokPerMonth) : Infinity,
+    acctsPerPlan: perAcctTok>0 ? Math.floor(ceil / perAcctTok) : Infinity,
   };
 }
 
@@ -876,14 +885,14 @@ function update(){
 
   // Max Plan capacity bar — shows the step function (plans needed + fill of the last plan)
   if(isMax){
-    const totalTokM = c.briefTokPerMonth*payingAccounts/1e6;
+    const totalTokM = c.claudeTokPerMonth*payingAccounts/1e6;
     document.getElementById('capacityPct').textContent = `${step.plans} × ${fmt(ctx.planCost)} = ${fmt(step.totalCost)}`;
     document.getElementById('capacityFill').style.width = (step.lastFill*100).toFixed(1)+'%';
     document.getElementById('capacityFill').style.background = step.lastFill<0.7?'#4ade80':step.lastFill<0.95?'#facc15':'#f87171';
     const note=document.getElementById('capacityNote');
     const acctsTxt = isFinite(step.acctsPerPlan) ? `~${step.acctsPerPlan} accounts fit per plan` : 'one account exceeds a full plan';
     note.className = 'capacity-note ' + (step.lastFill<0.7?'ok':step.lastFill<0.95?'warn':'over');
-    note.textContent = `${totalTokM.toFixed(1)}M brief tokens/mo across ${payingAccounts} accts → ${step.plans} plan${step.plans>1?'s':''} (${fmt(maxPlanPerAcct)}/acct). ${acctsTxt}; last plan ${(step.lastFill*100).toFixed(0)}% full.`;
+    note.textContent = `${totalTokM.toFixed(1)}M Claude tokens/mo (all ops) across ${payingAccounts} accts → ${step.plans} plan${step.plans>1?'s':''} (${fmt(maxPlanPerAcct)}/acct). ${acctsTxt}; last plan ${(step.lastFill*100).toFixed(0)}% full.`;
   }
 
   // Total cost / account
@@ -934,11 +943,11 @@ function update(){
   ].filter(d=>d.cost>0).sort((a,b)=>b.cost-a.cost);
   const top=drivers[0]||{label:'—',cost:0};
   const topPct=totalCost>0?Math.round(top.cost/totalCost*100):0;
-  const maxDelta = isMax ? (c.totalBriefCostRaw - maxPlanPerAcct) : 0;  // +ve = cheaper than API
+  const maxDelta = isMax ? (c.claudeApiCost - maxPlanPerAcct) : 0;  // all-Claude API cost vs the plan share; +ve = Max cheaper
   const savedNote = isMax
     ? (maxDelta>=0
-        ? ` &nbsp;·&nbsp; <span class="green">Max Plan saves ${fmt(maxDelta)}/acct vs API briefs</span>`
-        : ` &nbsp;·&nbsp; <span class="red">Max Plan costs ${fmt(-maxDelta)}/acct MORE than API here</span>`)
+        ? ` &nbsp;·&nbsp; <span class="green">Max Plan saves ${fmt(maxDelta)}/acct vs API</span>`
+        : ` &nbsp;·&nbsp; <span class="red">Max Plan costs ${fmt(-maxDelta)}/acct MORE than API here (underfilled plan)</span>`)
     : '';
   const acctsTo1M = pricePerAcct>0 ? Math.ceil((1e6/12)/pricePerAcct) : Infinity;
   document.getElementById('insightBar').innerHTML =
@@ -1109,9 +1118,9 @@ function update(){
 
   if (isMax) {
     if (maxDelta < 0)
-      recs.push({lvl:'crit', icon:'⚠', html:`Max Plan costs <strong class="r">${fmt(-maxDelta)}/acct MORE</strong> than API here — the last plan is only ${(step.lastFill*100).toFixed(0)}% full. Add accounts to fill it, or switch to API.`});
+      recs.push({lvl:'crit', icon:'⚠', html:`Max Plan costs <strong class="r">${fmt(-maxDelta)}/acct MORE</strong> than paying the API — the last plan is only ${(step.lastFill*100).toFixed(0)}% full. Add accounts to fill it, raise the token ceiling, or switch to API.`});
     else
-      recs.push({lvl:'warn', icon:'⚠', html:`Max Plan saves ${fmt(maxDelta)}/acct but carries <strong class="r">ToS risk</strong>. Routing briefs to Haiku gets similar savings with none — prefer that.`});
+      recs.push({lvl:'warn', icon:'⚠', html:`Max Plan saves <strong class="g">${fmt(maxDelta)}/acct</strong> vs API (all Claude work runs on the VM) — but carries Anthropic <strong class="r">ToS risk</strong>. Weigh the savings against that.`});
   }
 
   if (p.activeCompanies > p.usersPerAccount * 25)
