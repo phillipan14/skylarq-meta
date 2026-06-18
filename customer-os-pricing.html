@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Customer OS — Pricing & Unit Economics Model</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace; --sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif; }
+  body { font-family: var(--sans); background: #0f1117; color: #e2e8f0; font-size: 14px; -webkit-font-smoothing: antialiased; }
+  /* Monospaced, tabular figures everywhere a number is read */
+  .card-value, .val, .tier-price, .tier-floor, .breakdown-table td:last-child, .margin-row strong, #capacityPct { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+  .header { padding: 18px 28px 12px; border-bottom: 1px solid #1e2535; display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+  .header h1 { font-size: 19px; font-weight: 700; color: #f8fafc; letter-spacing: -0.01em; }
+  .header p { color: #64748b; font-size: 12px; }
+
+  .layout { display: grid; grid-template-columns: 320px 1fr; min-height: calc(100vh - 52px); }
+  .controls { background: #0d1117; border-right: 1px solid #1e2535; padding: 18px; overflow-y: auto; max-height: calc(100vh - 52px); }
+  .results  { padding: 22px; overflow-y: auto; }
+
+  .mode-toggle { display: flex; border: 1px solid #2d3748; border-radius: 8px; overflow: hidden; margin-bottom: 16px; }
+  .mode-btn { flex: 1; padding: 7px; background: transparent; border: none; color: #64748b; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
+  .mode-btn:not(:last-child) { border-right: 1px solid #2d3748; }
+  .mode-btn.active { background: #4f6ef7; color: #fff; }
+
+  .section-label { font-size: 10px; font-weight: 700; color: #4f6ef7; text-transform: uppercase; letter-spacing: 0.1em; margin: 18px 0 10px; }
+  .section-label:first-of-type { margin-top: 0; }
+  .section-note { font-size: 11px; color: #475569; margin-bottom: 12px; line-height: 1.5; }
+
+  .param-row { margin-bottom: 15px; }
+  .param-row label { font-size: 12px; color: #94a3b8; display: block; margin-bottom: 4px; }
+  .param-row .val { float: right; font-size: 13px; font-weight: 600; color: #e2e8f0; font-variant-numeric: tabular-nums; }
+  input[type=range] { width: 100%; accent-color: #4f6ef7; height: 4px; cursor: pointer; display: block; margin-top: 2px; }
+  input[type=number] { width: 100%; background: #1a2030; border: 1px solid #2d3748; border-radius: 6px; color: #e2e8f0; padding: 5px 8px; font-size: 12px; }
+  input[type=number]:focus { outline: none; border-color: #4f6ef7; }
+  .sub { font-size: 11px; color: #475569; margin-top: 3px; line-height: 1.4; }
+  .sub.warn { color: #facc15; }
+
+  .chip-row { display: flex; gap: 5px; margin-bottom: 5px; flex-wrap: wrap; }
+  .chip { padding: 4px 9px; border: 1px solid #2d3748; border-radius: 20px; background: #1a2030; color: #64748b; font-size: 11px; cursor: pointer; transition: all 0.12s; white-space: nowrap; }
+  .chip:hover { border-color: #4f6ef740; color: #94a3b8; }
+  .chip.active { background: #4f6ef720; border-color: #4f6ef7; color: #a5b4fc; font-weight: 600; }
+  .chip.orange.active { background: #fb923c20; border-color: #fb923c; color: #fb923c; }
+
+  .flat-tag { font-size: 10px; background: #fb923c15; color: #fb923c80; border: 1px solid #fb923c20; border-radius: 3px; padding: 1px 4px; margin-left: 4px; }
+
+  .maxplan-box { background: #4f6ef710; border: 1px solid #4f6ef730; border-radius: 8px; padding: 12px; margin-bottom: 16px; }
+  .maxplan-box p { font-size: 11px; color: #818cf8; line-height: 1.5; margin-bottom: 10px; }
+  .tos-warn { background: #f8717112; border: 1px solid #f8717140; border-radius: 6px; padding: 8px 10px; font-size: 11px; color: #f87171; line-height: 1.45; margin-bottom: 10px; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .two-col label { font-size: 11px; color: #64748b; display: block; margin-bottom: 3px; }
+  .capacity-bar-wrap { margin-top: 10px; }
+  .capacity-bar-header { display: flex; justify-content: space-between; font-size: 11px; color: #64748b; margin-bottom: 4px; }
+  .capacity-track { height: 6px; background: #1e2535; border-radius: 3px; overflow: hidden; }
+  .capacity-fill { height: 100%; border-radius: 3px; transition: width 0.3s, background 0.3s; }
+  .capacity-note { font-size: 11px; margin-top: 5px; line-height: 1.4; }
+  .capacity-note.ok  { color: #4ade80; }
+  .capacity-note.warn { color: #facc15; }
+  .capacity-note.over { color: #f87171; }
+
+  .toggle-line { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; cursor: pointer; }
+  .toggle-switch { width: 32px; height: 18px; background: #2d3748; border-radius: 9px; position: relative; transition: background 0.2s; flex-shrink: 0; }
+  .toggle-switch.on { background: #4f6ef7; }
+  .toggle-knob { width: 14px; height: 14px; background: #fff; border-radius: 7px; position: absolute; top: 2px; left: 2px; transition: left 0.2s; }
+  .toggle-switch.on .toggle-knob { left: 16px; }
+  .toggle-line span { font-size: 12px; color: #94a3b8; }
+
+  .advanced-toggle { width: 100%; margin-top: 16px; padding: 7px; background: none; border: 1px dashed #1e2535; border-radius: 6px; color: #334155; font-size: 11px; cursor: pointer; transition: all 0.15s; }
+  .advanced-toggle:hover { border-color: #4f6ef750; color: #64748b; }
+
+  .summary-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
+  .card { background: #1a2030; border: 1px solid #1e2535; border-radius: 10px; padding: 15px; }
+  .card-label { font-size: 10px; color: #475569; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 6px; }
+  .card-value { font-size: 26px; font-weight: 700; color: #f8fafc; font-variant-numeric: tabular-nums; }
+  .card-value.green  { color: #4ade80; }
+  .card-value.yellow { color: #facc15; }
+  .card-value.red    { color: #f87171; }
+  .card-sub { font-size: 11px; color: #334155; margin-top: 4px; line-height: 1.4; }
+
+  .insight-bar { background: #1a2030; border: 1px solid #1e2535; border-radius: 8px; padding: 12px 16px; margin-bottom: 18px; font-size: 12px; color: #64748b; line-height: 1.6; }
+  .insight-bar strong { color: #a5b4fc; }
+  .insight-bar .green { color: #4ade80; }
+  .insight-bar .red   { color: #f87171; }
+
+  .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px; }
+  .chart-box { background: #1a2030; border: 1px solid #1e2535; border-radius: 10px; padding: 16px; }
+  .chart-box h3 { font-size: 11px; color: #475569; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+  .chart-box .h3sub { font-size: 11px; color: #334155; margin-bottom: 10px; }
+  .chart-container { position: relative; height: 200px; }
+  .chart-container.tall { height: 260px; }
+
+  .breakdown-table { background: #1a2030; border: 1px solid #1e2535; border-radius: 10px; overflow: hidden; margin-bottom: 18px; }
+  .breakdown-table table { width: 100%; border-collapse: collapse; }
+  .breakdown-table th { background: #0d1117; padding: 9px 14px; font-size: 10px; color: #475569; text-transform: uppercase; letter-spacing: 0.06em; text-align: left; font-weight: 600; }
+  .breakdown-table td { padding: 8px 14px; border-top: 1px solid #1e2535; font-size: 12px; color: #94a3b8; }
+  .breakdown-table td:last-child { text-align: right; color: #e2e8f0; font-variant-numeric: tabular-nums; font-weight: 500; }
+  .breakdown-table tr.subtotal td { background: #0d1117; color: #64748b; font-size: 11px; }
+  .breakdown-table tr.subtotal td:last-child { color: #94a3b8; font-weight: 600; }
+  .breakdown-table tr.grand-total td { background: #0a0d14; font-weight: 700; color: #f8fafc; font-size: 13px; border-top: 2px solid #2d3748; }
+  .bar-cell { display: flex; align-items: center; gap: 6px; }
+  .mini-bar { height: 5px; border-radius: 3px; min-width: 2px; }
+
+  .pricing-section { background: #1a2030; border: 1px solid #1e2535; border-radius: 10px; padding: 18px; margin-bottom: 18px; }
+  .pricing-section h3 { font-size: 11px; color: #475569; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 14px; }
+  .tier-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+  .tier-card { border: 1px solid #2d3748; border-radius: 8px; padding: 12px; text-align: center; }
+  .tier-card.highlight { border-color: #4f6ef7; background: #4f6ef710; }
+  .tier-name  { font-size: 11px; color: #64748b; margin-bottom: 4px; font-weight: 600; }
+  .tier-price { font-size: 22px; font-weight: 700; color: #f8fafc; }
+  .tier-floor { font-size: 11px; color: #475569; margin-top: 4px; }
+  .tier-detail { font-size: 10px; color: #334155; margin-top: 3px; }
+  .tier-margin { font-size: 11px; margin-top: 6px; padding: 2px 8px; border-radius: 10px; display: inline-block; }
+  .tier-margin.good  { background: #4ade8020; color: #4ade80; }
+  .tier-margin.ok    { background: #facc1520; color: #facc15; }
+  .tier-margin.tight { background: #f8717120; color: #f87171; }
+
+  .margin-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .margin-row label { font-size: 12px; color: #64748b; white-space: nowrap; }
+  .margin-row input[type=range] { flex: 1; min-width: 120px; }
+  .margin-row strong { font-size: 13px; color: #e2e8f0; min-width: 34px; }
+  .value-inputs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+  .value-inputs label { font-size: 11px; color: #64748b; display: block; margin-bottom: 3px; }
+  .note { font-size: 11px; color: #475569; padding-top: 12px; border-top: 1px solid #1e2535; line-height: 1.6; }
+  .note strong.g { color: #4ade80; }
+  .note strong.b { color: #a5b4fc; }
+
+  /* Recommendations panel */
+  .panel { background: #1a2030; border: 1px solid #1e2535; border-radius: 10px; padding: 18px; margin-bottom: 18px; }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .panel-head h3 { font-size: 11px; color: #475569; text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel-head .tag { font-size: 10px; color: #818cf8; background: #4f6ef715; border: 1px solid #4f6ef730; border-radius: 20px; padding: 2px 10px; }
+  .rec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .rec-item { display: flex; gap: 10px; padding: 12px 14px; border-radius: 8px; background: #0f1320; border: 1px solid #1e2535; align-items: flex-start; }
+  .rec-dot { width: 7px; height: 7px; border-radius: 50%; background: #4f6ef7; margin-top: 5px; flex-shrink: 0; box-shadow: 0 0 0 3px #4f6ef71a; }
+  .rec-item.good .rec-dot { background: #4ade80; box-shadow: 0 0 0 3px #4ade801a; }
+  .rec-item.warn .rec-dot { background: #facc15; box-shadow: 0 0 0 3px #facc151a; }
+  .rec-item.crit .rec-dot { background: #f87171; box-shadow: 0 0 0 3px #f871711a; }
+  .rec-body { font-size: 12px; color: #94a3b8; line-height: 1.5; }
+  .rec-body strong { color: #e2e8f0; font-weight: 600; }
+  .rec-body strong.g { color: #4ade80; }
+  .rec-body strong.r { color: #f87171; }
+  .rec-body strong.b { color: #a5b4fc; }
+
+  .callout { background: #4f6ef70d; border: 1px solid #4f6ef726; border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #818cf8; line-height: 1.55; margin-top: 12px; }
+  .callout strong { color: #a5b4fc; }
+
+  /* Collapsible playbook */
+  details.playbook { background: #1a2030; border: 1px solid #1e2535; border-radius: 10px; margin-bottom: 18px; overflow: hidden; }
+  details.playbook > summary { cursor: pointer; list-style: none; padding: 15px 18px; font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  details.playbook > summary::-webkit-details-marker { display: none; }
+  details.playbook > summary::before { content: '▸'; color: #4f6ef7; transition: transform 0.15s; }
+  details.playbook[open] > summary::before { transform: rotate(90deg); }
+  details.playbook > summary:hover { color: #e2e8f0; }
+  .playbook-body { padding: 0 18px 18px; font-size: 12px; color: #94a3b8; line-height: 1.65; }
+  .playbook-body h4 { font-size: 12px; color: #a5b4fc; margin: 14px 0 5px; }
+  .playbook-body ul { margin: 0 0 4px; padding-left: 18px; }
+  .playbook-body li { margin-bottom: 5px; }
+  .playbook-body strong { color: #e2e8f0; }
+
+  /* Access gate */
+  .gate { position: fixed; inset: 0; background: #0f1117; z-index: 9999; display: flex; align-items: center; justify-content: center; }
+  .gate-box { background: #1a2030; border: 1px solid #1e2535; border-radius: 12px; padding: 30px 32px; width: 330px; text-align: center; }
+  .gate-box h2 { font-size: 15px; color: #f8fafc; margin-bottom: 6px; font-weight: 700; }
+  .gate-box p { font-size: 12px; color: #64748b; margin-bottom: 18px; line-height: 1.5; }
+  .gate-box input { width: 100%; background: #0f1320; border: 1px solid #2d3748; border-radius: 8px; color: #e2e8f0; padding: 10px 12px; font-size: 13px; font-family: var(--mono); }
+  .gate-box input:focus { outline: none; border-color: #4f6ef7; }
+  .gate-box button { width: 100%; margin-top: 10px; padding: 10px; background: #4f6ef7; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+  .gate-box button:hover { background: #4360e6; }
+  .gate-err { color: #f87171; font-size: 11px; min-height: 14px; margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<div class="gate" id="gate">
+  <div class="gate-box">
+    <h2>Customer OS — Pricing Model</h2>
+    <p>Allston Labs internal tool. Enter the access password.</p>
+    <input type="password" id="gatePw" placeholder="Password" autofocus onkeydown="if(event.key==='Enter')checkGate()">
+    <button onclick="checkGate()">Unlock</button>
+    <div class="gate-err" id="gateErr"></div>
+  </div>
+</div>
+
+<div class="header">
+  <h1>Customer OS — Pricing & Unit Economics Model</h1>
+  <p>Cost to serve one account/month &rarr; recommended price &rarr; contribution margin &amp; path to scale</p>
+</div>
+
+<div class="layout">
+<div class="controls">
+
+  <!-- INFRA MODE -->
+  <div class="section-label" style="margin-top:0">Brief refresh runs on</div>
+  <div class="mode-toggle">
+    <button class="mode-btn active" onclick="setMode('api',this)">Claude API</button>
+    <button class="mode-btn" onclick="setMode('maxplan',this)">Max Plan (VM)</button>
+  </div>
+
+  <div id="maxPlanBox" style="display:none">
+    <div class="maxplan-box">
+      <div class="tos-warn"><strong>⚠ ToS risk:</strong> running multi-tenant customer workloads on a personal/team Max subscription may violate Anthropic's terms. Treat this as an internal margin lever, not a pricing foundation.</div>
+      <p><strong>Step function:</strong> each plan is a fixed block with a fixed token ceiling. When aggregate brief demand across all accounts exceeds one plan, you buy <em>another whole plan</em> — cost jumps in $-increments, it doesn't spill smoothly.</p>
+      <div class="two-col">
+        <div>
+          <label>Cost per plan $/mo</label>
+          <input type="number" id="maxPlanCost" value="200" oninput="update()">
+          <div class="sub" style="margin-top:3px">$100 (5×) · $200 (20×)</div>
+        </div>
+        <div>
+          <label>Tokens per plan (M)</label>
+          <input type="number" id="maxPlanCeiling" value="40" min="1" step="1" oninput="update()">
+          <div class="sub" style="margin-top:3px">Anthropic doesn't publish — est. ~40M for $200</div>
+        </div>
+      </div>
+      <div class="capacity-bar-wrap">
+        <div class="capacity-bar-header">
+          <span>Plans needed (all accounts)</span>
+          <span id="capacityPct">—</span>
+        </div>
+        <div class="capacity-track"><div class="capacity-fill" id="capacityFill" style="width:0%"></div></div>
+        <div class="capacity-note ok" id="capacityNote"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CUSTOMER PROFILE -->
+  <div class="section-label">One customer account</div>
+  <div class="section-note">Describe a single paying customer. <strong style="color:#94a3b8">Active companies</strong> (live deals/pipeline) — not total tracked — is the #1 cost driver.</div>
+
+  <div class="param-row">
+    <label>Companies tracked (CRM size) <span class="val" id="val-companies">100</span></label>
+    <input type="range" id="companies" min="10" max="2000" step="10" value="100" oninput="syncActive();update()">
+    <div class="sub">Total contacts/companies stored in Customer OS.</div>
+  </div>
+
+  <div class="param-row">
+    <label>Active companies — live deals <span class="val" id="val-activeCompanies">10</span></label>
+    <input type="range" id="activeCompanies" min="1" max="500" value="10" oninput="update()">
+    <div class="sub" id="activeHint">10% of tracked. These get brief refreshes — the dominant cost. Deal-heavy teams run 30–50%.</div>
+  </div>
+
+  <div class="param-row">
+    <label>Inbox activity preset</label>
+    <div class="chip-row" id="activityChips">
+      <div class="chip" onclick="setActivity('quiet',this)">Quiet</div>
+      <div class="chip active" onclick="setActivity('normal',this)">Normal</div>
+      <div class="chip" onclick="setActivity('busy',this)">Busy</div>
+      <div class="chip" onclick="setActivity('heavy',this)">Heavy</div>
+    </div>
+    <div class="sub">Fills the three fields below — edit any of them independently.</div>
+  </div>
+
+  <div class="two-col" style="margin-bottom:15px">
+    <div><label class="sub" style="color:#94a3b8">Emails/day (team)</label><input type="number" id="emails" value="30" min="0" oninput="clearActivity();update()"></div>
+    <div><label class="sub" style="color:#94a3b8">Slack msgs/day</label><input type="number" id="slackMsgs" value="150" min="0" oninput="clearActivity();update()"></div>
+    <div><label class="sub" style="color:#94a3b8">Slack channels</label><input type="number" id="slackChannels" value="10" min="0" oninput="clearActivity();update()"></div>
+    <div><label class="sub" style="color:#94a3b8">Seats (team)</label><input type="number" id="usersPerAccount" value="2" min="1" oninput="update()"></div>
+  </div>
+
+  <div class="param-row">
+    <label>Meetings per week <span class="val" id="val-meetingsPerWeek">3</span></label>
+    <input type="range" id="meetingsPerWeek" min="0" max="40" value="3" oninput="update()">
+    <div class="sub">Recorded + transcribed, then structured (Haiku).</div>
+  </div>
+
+  <div class="param-row">
+    <label>Avg meeting duration (mins) <span class="val" id="val-meetingMins">30</span></label>
+    <input type="range" id="meetingMins" min="15" max="120" step="5" value="30" oninput="update()">
+  </div>
+
+  <div class="toggle-line" onclick="toggleWhisper()">
+    <div class="toggle-switch" id="whisperSwitch"><div class="toggle-knob"></div></div>
+    <span id="whisperLabel">Transcription: local Whisper (free)</span>
+  </div>
+  <div id="whisperPanel" style="display:none" class="param-row">
+    <label class="sub" style="color:#94a3b8">Hosted transcription $/min</label>
+    <input type="number" id="whisperPerMin" value="0.006" step="0.001" oninput="update()">
+    <div class="sub">OpenAI Whisper API ≈ $0.006/min. Self-hosted GPU ≈ $0.001/min. Local = $0.</div>
+  </div>
+
+  <!-- OUTBOUND -->
+  <div class="section-label">Outbound (GTM engine)</div>
+  <div class="toggle-line" onclick="toggleOutbound()">
+    <div class="toggle-switch" id="outboundSwitch"><div class="toggle-knob"></div></div>
+    <span id="outboundLabel">Off — no outbound</span>
+  </div>
+
+  <div id="outboundPanel" style="display:none">
+    <div class="param-row">
+      <label>Prospects/month <span class="val" id="val-outboundProspects">500</span></label>
+      <input type="range" id="outboundProspects" min="50" max="5000" step="50" value="500" oninput="update()">
+      <div class="sub">Sonnet-personalized email + Haiku QA before send.</div>
+    </div>
+    <div class="param-row">
+      <label>Email platform (Instantly) <span class="flat-tag">flat/mo</span></label>
+      <div class="chip-row">
+        <div class="chip orange active" onclick="setPlan('instantlyCost',47,this,'instantly')">Growth $47</div>
+        <div class="chip orange" onclick="setPlan('instantlyCost',97,this,'instantly')">Hyper $97</div>
+        <div class="chip orange" onclick="setPlan('instantlyCost',358,this,'instantly')">Speed $358</div>
+      </div>
+      <input type="number" id="instantlyCost" value="47" oninput="clearPlanChips('instantly');update()" style="margin-top:4px">
+      <div class="sub">Monthly billing. Annual is ~20% less ($37.60 Growth).</div>
+    </div>
+    <div class="param-row">
+      <label>LinkedIn (Unipile) <span class="flat-tag">per account</span></label>
+      <div class="two-col">
+        <div><label class="sub" style="color:#94a3b8">$ / connected account</label><input type="number" id="unipilePerAcct" value="5" step="0.5" oninput="update()"></div>
+        <div><label class="sub" style="color:#94a3b8">Floor $/mo (≤10 accts)</label><input type="number" id="unipileFloor" value="55" oninput="update()"></div>
+      </div>
+      <div class="sub">Unipile is per connected LinkedIn account, not flat. Business cost = max(floor, accounts × rate).</div>
+    </div>
+    <div class="toggle-line" onclick="toggleSharedTools()">
+      <div class="toggle-switch on" id="sharedToolsSwitch"><div class="toggle-knob"></div></div>
+      <span id="sharedToolsLabel">Instantly shared across all accounts</span>
+    </div>
+    <div class="sub" style="margin-top:-6px;margin-bottom:6px">On (default) = one agency Instantly workspace amortized across all accounts (÷ accounts). Off = each account has its own. Unipile is always per-account.</div>
+  </div>
+
+  <!-- YOUR BUSINESS -->
+  <div class="section-label">Your business</div>
+  <div class="param-row">
+    <label>Paying accounts <span class="val" id="val-payingAccounts">10</span></label>
+    <input type="range" id="payingAccounts" min="1" max="2000" value="10" oninput="update()">
+    <div class="sub" id="infraHint">Shared infra ÷ accounts = per-account cost.</div>
+  </div>
+  <div class="two-col" style="margin-bottom:8px">
+    <div><label class="sub" style="color:#94a3b8">Payment fee %</label><input type="number" id="feePct" value="2.9" step="0.1" oninput="update()"></div>
+    <div><label class="sub" style="color:#94a3b8">Per-charge $</label><input type="number" id="feeFixed" value="0.30" step="0.05" oninput="update()"></div>
+    <div><label class="sub" style="color:#94a3b8">Support/onboarding $/acct/mo</label><input type="number" id="supportCost" value="0" min="0" oninput="update()"></div>
+  </div>
+
+  <!-- ADVANCED -->
+  <button class="advanced-toggle" onclick="toggleAdvanced()" id="advBtn">⚙ Advanced settings</button>
+  <div id="advPanel" style="display:none">
+    <div class="section-label" style="margin-top:14px">Brief refresh tuning</div>
+    <div class="param-row">
+      <label>Refreshes / active company / day <span class="val" id="val-refreshMultiplier">1.5</span></label>
+      <input type="range" id="refreshMultiplier" min="0.5" max="11" step="0.5" value="1.5" oninput="update()">
+    </div>
+    <div class="param-row">
+      <label>Avg brief length (tokens) <span class="val" id="val-briefTokens">1,500</span></label>
+      <input type="range" id="briefTokens" min="0" max="5000" step="100" value="1500" oninput="update()">
+      <div class="sub">~7K in / 1.8K out per call (measured). Mature briefs 3–5K.</div>
+    </div>
+    <div class="param-row">
+      <label>Force re-syncs / month <span class="val" id="val-forceRefreshesPerMonth">2</span></label>
+      <input type="range" id="forceRefreshesPerMonth" min="0" max="50" value="2" oninput="update()">
+    </div>
+
+    <div class="section-label">Infrastructure (shared $/mo)</div>
+    <div class="two-col" style="margin-bottom:12px">
+      <div><label>Supabase Pro</label><input type="number" id="infraSupabase" value="25" oninput="update()"></div>
+      <div><label>EC2 backend</label><input type="number" id="infraEC2" value="50" oninput="update()"></div>
+      <div><label>EC2 Temporal</label><input type="number" id="infraTemporal" value="30" oninput="update()"></div>
+      <div><label>Other</label><input type="number" id="infraOther" value="10" oninput="update()"></div>
+    </div>
+
+    <div class="section-label">Vector storage (real)</div>
+    <div class="two-col" style="margin-bottom:6px">
+      <div><label>Bytes / vector</label><input type="number" id="bytesPerVector" value="14000" oninput="update()"></div>
+      <div><label>Raw bytes / chunk</label><input type="number" id="rawBytesPerChunk" value="1500" oninput="update()"></div>
+      <div><label>Tokens / chunk</label><input type="number" id="chunkTokens" value="375" oninput="update()"></div>
+      <div><label>Retention (months)</label><input type="number" id="retentionMonths" value="12" oninput="update()"></div>
+      <div><label>$ / GB-month</label><input type="number" id="pGB" value="0.125" step="0.005" oninput="update()"></div>
+      <div><label>Free GB (shared)</label><input type="number" id="freeGB" value="8" oninput="update()"></div>
+    </div>
+    <div class="sub" style="margin-bottom:6px">~14 KB/vector = 6,144 B raw (1536-dim float) + pgvector HNSW index overhead (~1.3–2×). Storage is a <em>stock</em>: it accumulates over the retention window, then divides the shared free tier across accounts.</div>
+
+    <div class="section-label">Model prices (per 1M tokens)</div>
+    <div class="two-col" style="margin-bottom:8px">
+      <div><label>Sonnet input $</label><input type="number" id="pSonnetIn" value="3.00" step="0.5" oninput="update()"></div>
+      <div><label>Sonnet output $</label><input type="number" id="pSonnetOut" value="15.00" step="0.5" oninput="update()"></div>
+      <div><label>Haiku input $</label><input type="number" id="pHaikuIn" value="1.00" step="0.1" oninput="update()"></div>
+      <div><label>Haiku output $</label><input type="number" id="pHaikuOut" value="5.00" step="0.5" oninput="update()"></div>
+      <div><label>Embed $/1M</label><input type="number" id="pEmbed" value="0.02" step="0.005" oninput="update()"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- RESULTS -->
+<div class="results">
+
+  <div class="summary-cards">
+    <div class="card">
+      <div class="card-label">Cost to serve / account</div>
+      <div class="card-value" id="totalCost">—</div>
+      <div class="card-sub" id="totalCostSub">AI + tools + infra + storage</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Recommended price / account</div>
+      <div class="card-value green" id="recPrice">—</div>
+      <div class="card-sub" id="recPriceSub">value-based</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Contribution margin</div>
+      <div class="card-value yellow" id="contribMargin">—</div>
+      <div class="card-sub" id="contribSub">after payment fees &amp; COGS</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Net MRR / ARR</div>
+      <div class="card-value" id="totalRevenue">—</div>
+      <div class="card-sub" id="revenueNote">at current accounts</div>
+    </div>
+  </div>
+
+  <div class="insight-bar" id="insightBar">Calculating…</div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Recommendations</h3>
+      <span class="tag">live — reacts to your inputs</span>
+    </div>
+    <div class="rec-grid" id="recGrid"></div>
+  </div>
+
+  <div class="charts-row">
+    <div class="chart-box">
+      <h3>Where the money goes</h3>
+      <div class="h3sub">cost to serve one account, by line item</div>
+      <div class="chart-container"><canvas id="pieChart"></canvas></div>
+    </div>
+    <div class="chart-box">
+      <h3>Cost vs revenue as deals scale</h3>
+      <div class="h3sub">x-axis = active companies (the real driver)</div>
+      <div class="chart-container"><canvas id="lineChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="chart-box" style="margin-bottom:18px">
+    <h3>Sensitivity — what actually moves cost</h3>
+    <div class="h3sub" id="tornadoSub">each bar = cost/account if that input drops/rises from current</div>
+    <div class="chart-container tall"><canvas id="tornadoChart"></canvas></div>
+    <div class="callout" id="tornadoCallout"></div>
+  </div>
+
+  <div class="breakdown-table">
+    <table>
+      <thead>
+        <tr><th>What</th><th>How</th><th>Volume/mo</th><th>%</th><th>$/mo</th></tr>
+      </thead>
+      <tbody id="breakdownBody"></tbody>
+    </table>
+  </div>
+
+  <!-- PRICING -->
+  <div class="pricing-section">
+    <h3>Pricing model</h3>
+    <div class="mode-toggle" style="max-width:420px;margin-bottom:16px">
+      <button class="mode-btn active" onclick="setPricing('value',this)">Value-based (recommended)</button>
+      <button class="mode-btn" onclick="setPricing('costplus',this)">Cost-plus (floor)</button>
+    </div>
+
+    <div id="costplusControls" style="display:none">
+      <div class="margin-row">
+        <label>Target gross margin:</label>
+        <input type="range" id="targetMargin" min="20" max="90" value="80" oninput="update()">
+        <strong id="val-margin">80%</strong>
+      </div>
+    </div>
+
+    <div id="valueControls">
+      <div class="value-inputs">
+        <div><label>Base $ / seat / mo</label><input type="number" id="baseSeat" value="99" oninput="update()"></div>
+        <div><label>Included active / seat</label><input type="number" id="includedActive" value="10" oninput="update()"></div>
+        <div><label>$ / extra active company</label><input type="number" id="overageRate" value="6" oninput="update()"></div>
+        <div><label>Outbound add-on $/acct</label><input type="number" id="outboundAddon" value="249" oninput="update()"></div>
+      </div>
+    </div>
+
+    <div class="tier-grid" id="tierGrid"></div>
+    <div class="note" id="pricingNote"></div>
+  </div>
+
+  <details class="playbook">
+    <summary>Pricing playbook &amp; strategy</summary>
+    <div class="playbook-body">
+      <h4>Best model: value seat + active-company meter</h4>
+      <ul>
+        <li><strong>$99/seat base + 10 included active companies per seat + $6 per extra active company</strong>, outbound as a separate add-on. Yields ~75–85% contribution margin across every tier and a clean, monotonic ladder.</li>
+        <li><strong>Meter on active companies, never flat per-seat.</strong> A flat seat price runs margin-negative on deal-heavy / low-seat accounts — the meter is the safety mechanism that keeps the tail profitable.</li>
+        <li><strong>Cost-plus is a floor, not a price.</strong> Use it only as a guardrail; price on value above it.</li>
+      </ul>
+      <h4>What drives cost (sensitivity)</h4>
+      <ul>
+        <li><strong>Active companies × refresh cadence</strong> own ~80% of cost — everything else (Slack, meetings, embeddings, storage) is &lt;3% each.</li>
+        <li>Meter price on active companies (the top lever <em>and</em> the clearest value signal); use refresh cadence as your margin throttle, tiered per plan.</li>
+      </ul>
+      <h4>Margin levers</h4>
+      <ul>
+        <li><strong>Route briefs to Haiku</strong> before reaching for Max Plan — similar savings (~$45/acct), no Anthropic ToS risk.</li>
+        <li><strong>Let model-price deflation flow to margin</strong> — Sonnet is likely to drop ~50%; value pricing pockets that instead of forcing price cuts.</li>
+        <li><strong>Be generous with seats</strong> (≈$0 to serve) to drive expansion; charge on deals, not people.</li>
+      </ul>
+      <h4>Path to $1M ARR</h4>
+      <ul>
+        <li>At the proposed prices: ~420 Growth, ~250 Pro, or ~125 Power accounts. Mix-shift toward Pro/Power — the meter makes expansion automatic as customers add pipeline.</li>
+      </ul>
+    </div>
+  </details>
+
+</div>
+</div>
+
+<script>
+let currentMode    = 'api';
+let pricingMode    = 'value';
+let outboundOn     = false;
+let whisperHosted  = false;
+let sharedTools    = true;   // Instantly amortized across all accounts by default (agency workspace)
+
+const ACTIVITY = {
+  quiet:  { emails: 10,  slackMsgs: 50,   slackChannels: 3  },
+  normal: { emails: 30,  slackMsgs: 150,  slackChannels: 10 },
+  busy:   { emails: 80,  slackMsgs: 400,  slackChannels: 20 },
+  heavy:  { emails: 200, slackMsgs: 1000, slackChannels: 40 },
+};
+
+// activePct = active companies as fraction of tracked (drives the tier presets too)
+const TIER_DEFS = [
+  { name:'Starter', companies:30,  activeCompanies:3,  usersPerAccount:1, meetingsPerWeek:1,  activity:'quiet'  },
+  { name:'Growth',  companies:100, activeCompanies:10, usersPerAccount:2, meetingsPerWeek:3,  activity:'normal' },
+  { name:'Pro',     companies:250, activeCompanies:25, usersPerAccount:3, meetingsPerWeek:8,  activity:'busy'   },
+  { name:'Power',   companies:500, activeCompanies:60, usersPerAccount:5, meetingsPerWeek:15, activity:'heavy'  },
+];
+
+let pieChart=null, lineChart=null, tornadoChart=null;
+
+function getNum(id){ const el=document.getElementById(id); return el?(parseFloat(el.value)||0):0; }
+function getInt(id){ const el=document.getElementById(id); return el?(parseInt(el.value)||0):0; }
+
+function setMode(mode, btn){
+  currentMode = mode;
+  document.querySelectorAll('.controls .mode-toggle:first-of-type .mode-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('maxPlanBox').style.display = mode==='maxplan'?'block':'none';
+  update();
+}
+function setPricing(mode, btn){
+  pricingMode = mode;
+  btn.parentElement.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('costplusControls').style.display = mode==='costplus'?'block':'none';
+  document.getElementById('valueControls').style.display    = mode==='value'?'block':'none';
+  update();
+}
+function setActivity(key, el){
+  const a = ACTIVITY[key];
+  document.getElementById('emails').value        = a.emails;
+  document.getElementById('slackMsgs').value     = a.slackMsgs;
+  document.getElementById('slackChannels').value = a.slackChannels;
+  document.querySelectorAll('#activityChips .chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  update();
+}
+function clearActivity(){ document.querySelectorAll('#activityChips .chip').forEach(c=>c.classList.remove('active')); }
+function syncActive(){
+  // keep active companies a sensible default (~10% of tracked) only while user hasn't diverged far
+  const co = getInt('companies');
+  const act = document.getElementById('activeCompanies');
+  act.max = Math.max(50, co);
+}
+function toggleOutbound(){
+  outboundOn = !outboundOn;
+  document.getElementById('outboundSwitch').classList.toggle('on', outboundOn);
+  document.getElementById('outboundLabel').textContent = outboundOn?'On — GTM engine active':'Off — no outbound';
+  document.getElementById('outboundPanel').style.display = outboundOn?'block':'none';
+  update();
+}
+function toggleWhisper(){
+  whisperHosted = !whisperHosted;
+  document.getElementById('whisperSwitch').classList.toggle('on', whisperHosted);
+  document.getElementById('whisperLabel').textContent = whisperHosted?'Transcription: hosted (paid)':'Transcription: local Whisper (free)';
+  document.getElementById('whisperPanel').style.display = whisperHosted?'block':'none';
+  update();
+}
+function toggleSharedTools(){
+  sharedTools = !sharedTools;
+  document.getElementById('sharedToolsSwitch').classList.toggle('on', sharedTools);
+  document.getElementById('sharedToolsLabel').textContent = sharedTools?'Instantly shared across all accounts':'Instantly dedicated per account';
+  update();
+}
+function setPlan(inputId, value, el, group){
+  document.getElementById(inputId).value = value;
+  clearPlanChips(group); el.classList.add('active'); update();
+}
+function clearPlanChips(group){
+  const map={instantly:'instantlyCost', linkedin:'linkedinCost'};
+  const input=document.getElementById(map[group]); if(!input) return;
+  input.closest('.param-row').querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+}
+function toggleAdvanced(){
+  const panel=document.getElementById('advPanel'), btn=document.getElementById('advBtn');
+  const open=panel.style.display==='none';
+  panel.style.display=open?'block':'none';
+  btn.textContent=open?'⚙ Hide advanced settings':'⚙ Advanced settings';
+}
+
+// ---- Pure cost engine (per account) ----
+function computeCosts(p){
+  const { activeCompanies, emails, slackMsgs, slackChannels,
+          meetingsPerWeek, meetingMins, usersPerAccount, outboundProspects,
+          refreshMultiplier, briefTokens, forceRefreshesPerMonth,
+          whisperHosted:wh, whisperPerMin,
+          bytesPerVector, rawBytesPerChunk, chunkTokens, retentionMonths,
+          mode, maxPlanCeiling } = p;
+  const { pSonnetIn, pSonnetOut, pHaikuIn, pHaikuOut, pEmbed } = p.prices;
+  const upa  = Math.max(1, usersPerAccount || 1);
+  const DAYS = 30;
+  const isMax = mode === 'maxplan';
+  const meetingsPerMonth = (meetingsPerWeek || 0) * 4.33;
+  const active = Math.max(0, activeCompanies || 0);
+
+  // Brief refresh (Sonnet) — dominant variable cost, driven by ACTIVE companies
+  const briefCallsPerMonth = active * Math.min(refreshMultiplier, 11) * DAYS;
+  const briefInputPerCall  = 820 + briefTokens + 8*200 + 8*375;
+  const briefOutputPerCall = Math.max(briefTokens + 300, 1800);
+  const briefCostRaw = briefCallsPerMonth * (briefInputPerCall/1e6*pSonnetIn + briefOutputPerCall/1e6*pSonnetOut);
+  const forceCallsPerMonth = forceRefreshesPerMonth * 5;
+  const forceCostRaw = forceCallsPerMonth * ((820+briefTokens+50*200+20*375)/1e6*pSonnetIn + briefOutputPerCall/1e6*pSonnetOut);
+  const totalBriefCostRaw = briefCostRaw + forceCostRaw;
+
+  // Max Plan: briefs run on the VM subscription, so per-token brief cost is $0.
+  // The subscription is a STEP FUNCTION billed at the business level (see costNum), not here.
+  const briefTokPerCall  = briefInputPerCall + briefOutputPerCall;
+  const briefTokPerMonth = briefCallsPerMonth * briefTokPerCall;
+  const briefCost  = isMax ? 0 : totalBriefCostRaw;
+
+  // Slack summarization (Haiku) — only channels with new activity
+  const msgsPerChPerDay  = slackChannels>0 ? slackMsgs/slackChannels : 0;
+  const syncsPerDay = 12;
+  const msgsPerChPerSync = msgsPerChPerDay / syncsPerDay;
+  const activeSyncFrac = Math.min(1, msgsPerChPerSync);            // skip syncs with no new content
+  const activeChSyncs = slackChannels * syncsPerDay * DAYS * activeSyncFrac;
+  const charsPerSync  = Math.max(msgsPerChPerSync, 0.0001) * 100;
+  const chunksPerSync = Math.max(1, Math.ceil(charsPerSync/12000));
+  const slackIn  = activeChSyncs * chunksPerSync * (500 + charsPerSync/4);
+  const slackOut = activeChSyncs * chunksPerSync * 256;
+  const slackSumCost = slackIn/1e6*pHaikuIn + slackOut/1e6*pHaikuOut;
+
+  // Meetings: structure + dedup (Haiku), transcription (Whisper, optional)
+  const transcriptTok = Math.min(meetingMins*175, 12500);
+  const mtgStructureCost = meetingsPerMonth * ((200+transcriptTok)/1e6*pHaikuIn + 2000/1e6*pHaikuOut);
+  const dedupCost        = meetingsPerMonth * ((300+transcriptTok*2)/1e6*pHaikuIn + transcriptTok/1e6*pHaikuOut);
+  const meetingsCost     = mtgStructureCost + dedupCost;
+  const whisperCost      = wh ? meetingsPerMonth * meetingMins * (whisperPerMin||0) : 0;
+
+  // Outbound personalization (Sonnet) + QA (Haiku)
+  const prospects = outboundOn ? (outboundProspects||0) : 0;
+  const personalizationCost = prospects * (2800/1e6*pSonnetIn + 280/1e6*pSonnetOut);
+  const outboundQACost      = prospects * (700/1e6*pHaikuIn + 200/1e6*pHaikuOut);
+
+  // Embeddings — team-total content (NOT multiplied by seats)
+  const embedTok  = emails*DAYS*3*375 + slackMsgs*DAYS*25 + meetingsPerMonth*transcriptTok;
+  const embedCost = embedTok/1e6*pEmbed;
+
+  // Vector storage (real, steady-state stock over retention window)
+  const vectorsPerMonth = embedTok / Math.max(1, chunkTokens);
+  const bytesPerMonth   = vectorsPerMonth * (bytesPerVector + rawBytesPerChunk);
+  const gbPerMonth      = bytesPerMonth / 1e9;
+  const storageGB       = gbPerMonth * Math.max(0, retentionMonths);  // GB held per account at steady state
+
+  const totalAI = briefCost + slackSumCost + meetingsCost + whisperCost + personalizationCost + outboundQACost + embedCost;
+
+  return {
+    brief:        { cost: briefCost,        label: isMax?'Brief refresh (Max Plan)':'Brief refresh', model: isMax?'Claude Code Max Plan':'Sonnet 4.6', vol:`${Math.round(briefCallsPerMonth).toLocaleString()} calls` },
+    slackSum:     { cost: slackSumCost,     label:'Slack summarization', model:'Haiku 4.5', vol:`${Math.round(activeChSyncs).toLocaleString()} syncs` },
+    meetings:     { cost: meetingsCost,     label:'Meeting structuring', model:'Haiku 4.5', vol:`${meetingsPerMonth.toFixed(0)} meetings` },
+    whisper:      { cost: whisperCost,      label:'Transcription (hosted)', model:'Whisper', vol:`${Math.round(meetingsPerMonth*meetingMins)} min` },
+    personalization:{ cost: personalizationCost, label:'Outbound personalization', model:'Sonnet 4.6', vol:`${prospects.toLocaleString()} prospects` },
+    outboundQA:   { cost: outboundQACost,   label:'Outbound QA', model:'Haiku 4.5', vol:`${prospects.toLocaleString()} drafts` },
+    embed:        { cost: embedCost,        label:'Embeddings', model:'text-embedding-3-small', vol:`${Math.round(embedTok/1000)}K tokens` },
+    totalAI, storageGB, briefTokPerMonth, totalBriefCostRaw, briefCallsPerMonth,
+  };
+}
+
+function fmt(n){
+  if(!isFinite(n)) return '—';
+  if(Math.abs(n)>=1000) return '$'+n.toLocaleString('en-US',{maximumFractionDigits:0});
+  if(Math.abs(n)>=1)    return '$'+n.toFixed(2);
+  if(Math.abs(n)>=0.01) return '$'+n.toFixed(3);
+  return '$'+n.toFixed(4);
+}
+function fmtK(n){ return n>=1000 ? '$'+(n/1000).toFixed(n>=10000?0:1)+'k' : '$'+Math.round(n); }
+
+// Read all params once
+function readParams(){
+  const isMax = currentMode==='maxplan';
+  return {
+    companies: getInt('companies'),
+    activeCompanies: getInt('activeCompanies'),
+    emails: getNum('emails'),
+    slackMsgs: getNum('slackMsgs'),
+    slackChannels: getNum('slackChannels'),
+    meetingsPerWeek: getNum('meetingsPerWeek'),
+    meetingMins: getInt('meetingMins'),
+    usersPerAccount: getInt('usersPerAccount'),
+    outboundProspects: getInt('outboundProspects'),
+    refreshMultiplier: getNum('refreshMultiplier'),
+    briefTokens: getInt('briefTokens'),
+    forceRefreshesPerMonth: getInt('forceRefreshesPerMonth'),
+    whisperHosted, whisperPerMin: getNum('whisperPerMin'),
+    bytesPerVector: getNum('bytesPerVector'),
+    rawBytesPerChunk: getNum('rawBytesPerChunk'),
+    chunkTokens: getNum('chunkTokens'),
+    retentionMonths: getNum('retentionMonths'),
+    maxPlanCeiling: isMax ? getNum('maxPlanCeiling') : 10,
+    mode: currentMode,
+    prices: {
+      pSonnetIn: getNum('pSonnetIn'), pSonnetOut: getNum('pSonnetOut'),
+      pHaikuIn: getNum('pHaikuIn'),   pHaikuOut: getNum('pHaikuOut'),
+      pEmbed: getNum('pEmbed'),
+    },
+  };
+}
+
+// Max Plan STEP FUNCTION: aggregate brief demand across all accounts → whole plans → $/account.
+// Returns {plans, totalCost, perAcct, lastFill, acctsPerPlan}. Assumes every account looks like `c`.
+function maxPlanStep(c, ctx){
+  if(!ctx.isMax) return { plans:0, totalCost:0, perAcct:0, lastFill:0, acctsPerPlan:Infinity };
+  const ceil = Math.max(1, ctx.ceilingTok);
+  const totalTok = c.briefTokPerMonth * ctx.payingAccounts;
+  const plans = Math.max(1, Math.ceil(totalTok / ceil));
+  const totalCost = plans * ctx.planCost;
+  const used = totalTok - (plans-1)*ceil;           // tokens on the last (partial) plan
+  return {
+    plans, totalCost,
+    perAcct: ctx.payingAccounts>0 ? totalCost/ctx.payingAccounts : totalCost,
+    lastFill: Math.min(1, used/ceil),
+    acctsPerPlan: c.briefTokPerMonth>0 ? Math.floor(ceil / c.briefTokPerMonth) : Infinity,
+  };
+}
+
+// Given per-account computeCosts result + business context, return full $/acct cost
+function costNum(c, ctx){
+  const totalStorageGB = c.storageGB * ctx.payingAccounts;
+  const billableGB     = Math.max(0, totalStorageGB - ctx.freeGB);
+  const storagePerAcct = ctx.payingAccounts>0 ? billableGB * ctx.pGB / ctx.payingAccounts : 0;
+  const maxPlanPerAcct = maxPlanStep(c, ctx).perAcct;
+  return c.totalAI + maxPlanPerAcct + (ctx.toolsPerAcct||0) + ctx.infra + storagePerAcct + ctx.supportCost;
+}
+
+// Value-based price for an account given its active companies + seats.
+// Included active companies scale PER SEAT (fairer to multi-seat teams; protects the deal-heavy tail).
+function valuePrice(activeCompanies, seats){
+  const seatN      = Math.max(1, seats);
+  const base       = getNum('baseSeat') * seatN;
+  const included   = getNum('includedActive') * seatN;
+  const overage    = Math.max(0, activeCompanies - included) * getNum('overageRate');
+  const addon      = outboundOn ? getNum('outboundAddon') : 0;
+  return base + overage + addon;
+}
+
+function update(){
+  const isMax = currentMode==='maxplan';
+  const p = readParams();
+
+  // active companies hint
+  const actPct = p.companies>0 ? (p.activeCompanies/p.companies*100) : 0;
+  document.getElementById('activeHint').textContent =
+    `${actPct.toFixed(0)}% of tracked. These get brief refreshes — the dominant cost. Deal-heavy teams run 30–50%.`;
+
+  // display values
+  document.getElementById('val-companies').textContent       = p.companies.toLocaleString();
+  document.getElementById('val-activeCompanies').textContent = p.activeCompanies;
+  document.getElementById('val-meetingsPerWeek').textContent = p.meetingsPerWeek.toFixed(0);
+  document.getElementById('val-meetingMins').textContent     = p.meetingMins;
+  if(outboundOn) document.getElementById('val-outboundProspects').textContent = getInt('outboundProspects').toLocaleString();
+  document.getElementById('val-refreshMultiplier').textContent     = p.refreshMultiplier.toFixed(1);
+  document.getElementById('val-briefTokens').textContent           = p.briefTokens.toLocaleString();
+  document.getElementById('val-forceRefreshesPerMonth').textContent= p.forceRefreshesPerMonth;
+
+  const targetMargin = getInt('targetMargin');
+  document.getElementById('val-margin').textContent = targetMargin + '%';
+
+  const totalInfra     = getNum('infraSupabase')+getNum('infraEC2')+getNum('infraTemporal')+getNum('infraOther');
+  const payingAccounts = Math.max(1, getInt('payingAccounts'));
+  const infra          = totalInfra/payingAccounts;
+  document.getElementById('val-payingAccounts').textContent = payingAccounts.toLocaleString();
+  document.getElementById('infraHint').textContent = `Shared infra ($${totalInfra}/mo) ÷ ${payingAccounts} = $${infra.toFixed(2)}/account`;
+
+  // Outbound tools (business level). Instantly = flat workspace plan (shared toggle applies).
+  // Unipile = per connected LinkedIn account, with a monthly floor; always per-account.
+  const instantlyCost   = outboundOn ? getNum('instantlyCost') : 0;
+  const instantlyPerAcct= sharedTools ? instantlyCost/payingAccounts : instantlyCost;
+  const unipileRate     = outboundOn ? getNum('unipilePerAcct') : 0;
+  const unipileTotal    = outboundOn ? Math.max(getNum('unipileFloor'), payingAccounts*unipileRate) : 0;
+  const unipilePerAcct  = unipileTotal/payingAccounts;
+  const toolsPerAcct    = instantlyPerAcct + unipilePerAcct;
+  const supportCost     = getNum('supportCost');
+
+  const ctx = { payingAccounts, freeGB:getNum('freeGB'), pGB:getNum('pGB'),
+                toolsPerAcct, infra, supportCost,
+                isMax, ceilingTok:getNum('maxPlanCeiling')*1e6, planCost:getNum('maxPlanCost') };
+
+  const c = computeCosts(p);
+  const step = maxPlanStep(c, ctx);
+  const maxPlanPerAcct = step.perAcct;
+
+  // Max Plan capacity bar — shows the step function (plans needed + fill of the last plan)
+  if(isMax){
+    const totalTokM = c.briefTokPerMonth*payingAccounts/1e6;
+    document.getElementById('capacityPct').textContent = `${step.plans} × ${fmt(ctx.planCost)} = ${fmt(step.totalCost)}`;
+    document.getElementById('capacityFill').style.width = (step.lastFill*100).toFixed(1)+'%';
+    document.getElementById('capacityFill').style.background = step.lastFill<0.7?'#4ade80':step.lastFill<0.95?'#facc15':'#f87171';
+    const note=document.getElementById('capacityNote');
+    const acctsTxt = isFinite(step.acctsPerPlan) ? `~${step.acctsPerPlan} accounts fit per plan` : 'one account exceeds a full plan';
+    note.className = 'capacity-note ' + (step.lastFill<0.7?'ok':step.lastFill<0.95?'warn':'over');
+    note.textContent = `${totalTokM.toFixed(1)}M brief tokens/mo across ${payingAccounts} accts → ${step.plans} plan${step.plans>1?'s':''} (${fmt(maxPlanPerAcct)}/acct). ${acctsTxt}; last plan ${(step.lastFill*100).toFixed(0)}% full.`;
+  }
+
+  // Total cost / account
+  const totalStorageGB = c.storageGB * payingAccounts;
+  const billableGB     = Math.max(0, totalStorageGB - ctx.freeGB);
+  const storagePerAcct = billableGB * ctx.pGB / payingAccounts;
+  const totalCost      = c.totalAI + maxPlanPerAcct + toolsPerAcct + infra + storagePerAcct + supportCost;
+  const upa            = Math.max(1, p.usersPerAccount);
+
+  // ---- Pricing ----
+  const costPlusSeat   = (totalCost/upa)/(1 - targetMargin/100);
+  const costPlusAcct   = costPlusSeat * upa;
+  const valueAcct      = valuePrice(p.activeCompanies, upa);
+  const pricePerAcct   = pricingMode==='value' ? valueAcct : costPlusAcct;
+
+  // ---- Revenue & contribution (real margin after fees) ----
+  const grossRev   = pricePerAcct * payingAccounts;
+  const feePct     = getNum('feePct')/100;
+  const feeFixed   = getNum('feeFixed');
+  const fees       = grossRev*feePct + feeFixed*payingAccounts;
+  const netRev     = grossRev - fees;
+  const totalCostBiz = totalCost * payingAccounts;
+  const contribution = netRev - totalCostBiz;
+  const contribMarginPct = grossRev>0 ? contribution/grossRev*100 : 0;
+
+  // cards
+  document.getElementById('totalCost').textContent = fmt(totalCost);
+  document.getElementById('totalCostSub').textContent = `AI ${fmt(c.totalAI)} + tools ${fmt(toolsPerAcct+maxPlanPerAcct)} + infra ${fmt(infra)} + storage ${fmt(storagePerAcct)}`;
+  document.getElementById('recPrice').textContent = fmt(pricePerAcct);
+  document.getElementById('recPriceSub').textContent = pricingMode==='value'
+    ? `${fmt(getNum('baseSeat'))}/seat × ${upa} + meter` : `${fmt(costPlusSeat)}/seat × ${upa} (cost-plus ${targetMargin}%)`;
+  const cm=document.getElementById('contribMargin');
+  cm.textContent = contribMarginPct.toFixed(0)+'%';
+  cm.className = 'card-value ' + (contribMarginPct>=60?'green':contribMarginPct>=35?'yellow':'red');
+  document.getElementById('contribSub').textContent = `${fmt(contribution)}/mo contribution · fees ${fmt(fees)}`;
+  document.getElementById('totalRevenue').textContent = fmtK(netRev);
+  document.getElementById('revenueNote').textContent  = `${fmtK(netRev)} MRR · ${fmtK(netRev*12)} ARR (net of fees)`;
+
+  // Insight bar
+  const drivers=[
+    {label:'Brief refresh',cost:c.brief.cost},
+    {label:'Outbound',cost:c.personalization.cost+c.outboundQA.cost},
+    {label:'Slack',cost:c.slackSum.cost},
+    {label:'Meetings',cost:c.meetings.cost+c.whisper.cost},
+    {label:'Flat tools',cost:toolsPerAcct+maxPlanPerAcct},
+    {label:'Storage',cost:storagePerAcct},
+    {label:'Embeddings',cost:c.embed.cost},
+  ].filter(d=>d.cost>0).sort((a,b)=>b.cost-a.cost);
+  const top=drivers[0]||{label:'—',cost:0};
+  const topPct=totalCost>0?Math.round(top.cost/totalCost*100):0;
+  const maxDelta = isMax ? (c.totalBriefCostRaw - maxPlanPerAcct) : 0;  // +ve = cheaper than API
+  const savedNote = isMax
+    ? (maxDelta>=0
+        ? ` &nbsp;·&nbsp; <span class="green">Max Plan saves ${fmt(maxDelta)}/acct vs API briefs</span>`
+        : ` &nbsp;·&nbsp; <span class="red">Max Plan costs ${fmt(-maxDelta)}/acct MORE than API here</span>`)
+    : '';
+  const acctsTo1M = pricePerAcct>0 ? Math.ceil((1e6/12)/pricePerAcct) : Infinity;
+  document.getElementById('insightBar').innerHTML =
+    `Biggest cost: <strong>${top.label}</strong> (${topPct}%)` +
+    ` &nbsp;·&nbsp; Cost/acct <strong>${fmt(totalCost)}</strong> → price <strong>${fmt(pricePerAcct)}</strong>` +
+    ` &nbsp;·&nbsp; Contribution margin <span class="${contribMarginPct>=60?'green':'red'}">${contribMarginPct.toFixed(0)}%</span>` +
+    ` &nbsp;·&nbsp; Path to $1M ARR: <strong>${isFinite(acctsTo1M)?acctsTo1M.toLocaleString():'—'}</strong> accounts${savedNote}`;
+
+  // Breakdown table
+  const COLORS=['#4f6ef7','#a78bfa','#34d399','#f472b6','#fbbf24','#22d3ee','#94a3b8'];
+  const aiItems=[c.brief,c.slackSum,c.meetings,c.whisper,c.personalization,c.outboundQA,c.embed].filter(x=>x.cost>0.0005);
+  let html=aiItems.map((item,i)=>{
+    const pct=c.totalAI>0?item.cost/c.totalAI*100:0;
+    const barW=Math.max(2,Math.round(pct*1.4));
+    return `<tr><td>${item.label}</td><td style="color:#475569">${item.model}</td><td style="color:#475569">${item.vol}</td>
+      <td><div class="bar-cell"><div class="mini-bar" style="width:${barW}px;background:${COLORS[i%COLORS.length]}"></div><span style="color:#475569;font-size:11px">${pct.toFixed(0)}%</span></div></td>
+      <td>${fmt(item.cost)}</td></tr>`;
+  }).join('');
+  html+=`<tr class="subtotal"><td colspan="4">Variable AI total</td><td>${fmt(c.totalAI)}</td></tr>`;
+  const flatItems=[
+    isMax && maxPlanPerAcct>0 ? {label:`Max Plan (${step.plans} × ${fmt(ctx.planCost)} ÷ ${payingAccounts})`,cost:maxPlanPerAcct}:null,
+    instantlyPerAcct>0 ? {label:sharedTools?`Instantly (${fmt(instantlyCost)} ÷ ${payingAccounts})`:'Instantly (per account)',cost:instantlyPerAcct}:null,
+    unipilePerAcct>0 ? {label:`Unipile/LinkedIn (${fmt(unipileTotal)} ÷ ${payingAccounts})`,cost:unipilePerAcct}:null,
+    infra>0 ? {label:'Infra share',cost:infra}:null,
+    storagePerAcct>0.0005 ? {label:`Vector storage (${(c.storageGB).toFixed(2)} GB/acct)`,cost:storagePerAcct}:null,
+    supportCost>0 ? {label:'Support / onboarding',cost:supportCost}:null,
+  ].filter(Boolean);
+  flatItems.forEach(item=>{ html+=`<tr><td>${item.label}</td><td style="color:#475569">fixed</td><td style="color:#475569">—</td><td></td><td>${fmt(item.cost)}</td></tr>`; });
+  html+=`<tr class="grand-total"><td colspan="4">Total / account / month</td><td>${fmt(totalCost)}</td></tr>`;
+  document.getElementById('breakdownBody').innerHTML=html;
+
+  // Pie
+  const pieItems=[...aiItems, ...flatItems].filter(x=>x.cost>0);
+  const PIE_COLORS=[...COLORS,'#fb923c','#f59e0b','#10b981','#64748b','#818cf8'];
+  if(pieChart){
+    pieChart.data.labels=pieItems.map(x=>x.label);
+    pieChart.data.datasets[0].data=pieItems.map(x=>x.cost);
+    pieChart.data.datasets[0].backgroundColor=PIE_COLORS.slice(0,pieItems.length);
+    pieChart.update('none');
+  } else {
+    pieChart=new Chart(document.getElementById('pieChart'),{type:'doughnut',
+      data:{labels:pieItems.map(x=>x.label),datasets:[{data:pieItems.map(x=>x.cost),backgroundColor:PIE_COLORS.slice(0,pieItems.length),borderWidth:0,hoverOffset:6}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#475569',font:{size:11},boxWidth:10,padding:6}},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${fmt(ctx.raw)}`}}}}});
+  }
+
+  // Line — cost vs revenue as ACTIVE companies scale
+  const acRange=[2,5,10,20,40,75,125,200];
+  const lineCost=acRange.map(ac=>{
+    const cc=computeCosts({...p,activeCompanies:ac});
+    return costNum(cc, ctx);
+  });
+  const lineRev=acRange.map((ac,i)=> pricingMode==='value' ? valuePrice(ac,upa) : (lineCost[i]/upa)/(1-targetMargin/100)*upa);
+  if(lineChart){
+    lineChart.data.labels=acRange;
+    lineChart.data.datasets[0].data=lineCost;
+    lineChart.data.datasets[1].data=lineRev;
+    lineChart.update('none');
+  } else {
+    lineChart=new Chart(document.getElementById('lineChart'),{type:'line',
+      data:{labels:acRange,datasets:[
+        {label:'Cost/acct',data:lineCost,borderColor:'#f87171',backgroundColor:'#f8717110',fill:true,tension:0.35,pointRadius:3},
+        {label:'Price/acct',data:lineRev,borderColor:'#4ade80',backgroundColor:'#4ade8010',fill:false,tension:0.35,pointRadius:3,borderDash:[4,3]},
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,
+        scales:{x:{grid:{color:'#1e2535'},ticks:{color:'#475569'},title:{display:true,text:'Active companies',color:'#475569',font:{size:11}}},
+                y:{grid:{color:'#1e2535'},ticks:{color:'#475569',callback:v=>fmtK(v)}}},
+        plugins:{legend:{labels:{color:'#475569',font:{size:11},boxWidth:10}},tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: ${fmt(ctx.raw)}/mo`}}}}});
+  }
+
+  // Sensitivity tornado — cost/acct at low/high of each driver
+  const base=totalCost;
+  function costWith(over){ return costNum(computeCosts({...p,...over}), ctx); }
+  const sens=[
+    {label:'Active companies', low:costWith({activeCompanies:Math.max(1,Math.round(p.activeCompanies*0.5))}), high:costWith({activeCompanies:Math.round(p.activeCompanies*2)})},
+    {label:'Refresh/day',      low:costWith({refreshMultiplier:Math.max(0.5,p.refreshMultiplier*0.5)}),       high:costWith({refreshMultiplier:Math.min(11,p.refreshMultiplier*2)})},
+    {label:'Brief length',     low:costWith({briefTokens:Math.max(0,Math.round(p.briefTokens*0.5))}),         high:costWith({briefTokens:Math.round(p.briefTokens*1.5)})},
+    {label:'Sonnet price',     low:costWith({prices:{...p.prices,pSonnetIn:p.prices.pSonnetIn*0.7,pSonnetOut:p.prices.pSonnetOut*0.7}}), high:costWith({prices:{...p.prices,pSonnetIn:p.prices.pSonnetIn*1.3,pSonnetOut:p.prices.pSonnetOut*1.3}})},
+    {label:'Slack volume',     low:costWith({slackMsgs:p.slackMsgs*0.5}),  high:costWith({slackMsgs:p.slackMsgs*2})},
+    {label:'Meetings/wk',      low:costWith({meetingsPerWeek:Math.max(0,p.meetingsPerWeek*0.5)}), high:costWith({meetingsPerWeek:p.meetingsPerWeek*2})},
+    {label:'Seats',            low:costWith({usersPerAccount:Math.max(1,p.usersPerAccount-1)}),    high:costWith({usersPerAccount:p.usersPerAccount+3})},
+  ].map(d=>({...d,range:Math.abs(d.high-d.low)})).sort((a,b)=>a.range-b.range);
+  document.getElementById('tornadoSub').textContent=`baseline cost/account = ${fmt(base)} (dashed line). Longest bar = biggest lever.`;
+  const tLabels=sens.map(s=>s.label);
+  const tData=sens.map(s=>[Math.min(s.low,s.high),Math.max(s.low,s.high)]);
+  if(tornadoChart){
+    tornadoChart.data.labels=tLabels;
+    tornadoChart.data.datasets[0].data=tData;
+    tornadoChart.options.plugins.annotation=undefined;
+    tornadoChart.update('none');
+  } else {
+    tornadoChart=new Chart(document.getElementById('tornadoChart'),{type:'bar',
+      data:{labels:tLabels,datasets:[{data:tData,backgroundColor:'#4f6ef7aa',borderColor:'#4f6ef7',borderWidth:1,borderSkipped:false,barThickness:18}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        scales:{x:{grid:{color:'#1e2535'},ticks:{color:'#475569',callback:v=>fmt(v)},title:{display:true,text:'cost/account range',color:'#334155',font:{size:10}}},
+                y:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:11}}}},
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${fmt(ctx.raw[0])} → ${fmt(ctx.raw[1])}`}}}}});
+  }
+
+  // Tier grid — show value price + cost-plus floor + real margin
+  document.getElementById('tierGrid').innerHTML = TIER_DEFS.map(td=>{
+    const act=ACTIVITY[td.activity];
+    const pp={...p, companies:td.companies, activeCompanies:td.activeCompanies, usersPerAccount:td.usersPerAccount,
+              meetingsPerWeek:td.meetingsPerWeek, emails:act.emails, slackMsgs:act.slackMsgs, slackChannels:act.slackChannels};
+    const tc=computeCosts(pp);
+    const tCost=costNum(tc, ctx);
+    const upa2=Math.max(1,td.usersPerAccount);
+    const floor=(tCost/upa2)/(1-targetMargin/100)*upa2;
+    const valueP=valuePrice(td.activeCompanies, upa2);
+    const shownPrice = pricingMode==='value' ? valueP : floor;
+    const realMargin = shownPrice>0 ? (1 - tCost/shownPrice)*100 : 0;
+    const cls = realMargin>=65?'good':realMargin>=40?'ok':'tight';
+    const hi  = p.activeCompanies>=td.activeCompanies*0.6 && p.activeCompanies<=td.activeCompanies*1.6;
+    return `<div class="tier-card ${hi?'highlight':''}">
+      <div class="tier-name">${td.name}</div>
+      <div class="tier-price">${fmt(shownPrice)}<span style="font-size:11px;font-weight:400;color:#475569">/acct</span></div>
+      <div class="tier-floor">cost ${fmt(tCost)} · floor ${fmt(floor)}</div>
+      <div class="tier-detail">${td.companies} cos · ${td.activeCompanies} active · ${upa2} seat${upa2>1?'s':''}</div>
+      <div class="tier-margin ${cls}">${realMargin.toFixed(0)}% margin</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('pricingNote').innerHTML = pricingMode==='value'
+    ? `<strong class="b">Value-based</strong> = ${fmt(getNum('baseSeat'))}/seat base + ${fmt(getNum('overageRate'))}/active-company over ${getNum('includedActive')} included <em>per seat</em>${outboundOn?` + ${fmt(getNum('outboundAddon'))} outbound add-on`:''}. ` +
+      `Current account: cost ${fmt(totalCost)} → price <strong class="g">${fmt(pricePerAcct)}</strong> → <strong class="${contribMarginPct>=60?'g':''}">${contribMarginPct.toFixed(0)}% contribution margin</strong>. ` +
+      `Meter on <strong class="b">active companies</strong> — it tracks both cost and value. Outbound priced as a separate add-on so its flat tools never distort the seat.`
+    : `<strong class="b">Cost-plus</strong> at ${targetMargin}% sets price = cost ÷ (1−margin) — a <em>floor</em>, not a market price. ` +
+      `Current: cost ${fmt(totalCost)} → ${fmt(costPlusSeat)}/seat. After payment fees, real contribution margin is <strong>${contribMarginPct.toFixed(0)}%</strong>, not ${targetMargin}%. Use this as your guardrail, then price on value above it.`;
+
+  // ---- Sensitivity callout (names the top two levers) ----
+  const top2 = sens.slice(-2).reverse();
+  document.getElementById('tornadoCallout').innerHTML =
+    `<strong>What moves cost:</strong> ${top2.map(s=>s.label).join(' and ')} dominate — together they swing cost/account more than everything else combined. ` +
+    `Meter your price on <strong>active companies</strong> (the top lever and the clearest value signal); use <strong>refresh cadence</strong> as the margin throttle, tiered per plan.`;
+
+  // ---- Dynamic recommendations ----
+  const recs = [];
+  if (pricingMode === 'costplus')
+    recs.push({lvl:'warn', icon:'💡', html:`You're in <strong>cost-plus</strong> mode — that's a floor, not a price. Switch to <strong class="b">value-based</strong> to price on worth (${fmt(valueAcct)}/acct vs ${fmt(costPlusAcct)} floor).`});
+  else
+    recs.push({lvl:'good', icon:'✓', html:`<strong>Value-based pricing</strong> active. Falling model prices flow to <strong class="g">margin</strong>, not price cuts — the right posture.`});
+
+  if (contribMarginPct < 50)
+    recs.push({lvl:'crit', icon:'⚠', html:`Contribution margin <strong class="r">${contribMarginPct.toFixed(0)}%</strong> after fees — thin. Raise the base seat or the $/active-company meter.`});
+  else if (contribMarginPct < 70)
+    recs.push({lvl:'warn', icon:'•', html:`Contribution margin <strong>${contribMarginPct.toFixed(0)}%</strong> — healthy, with room. The active-company meter rate is the lever.`});
+  else
+    recs.push({lvl:'good', icon:'✓', html:`Contribution margin <strong class="g">${contribMarginPct.toFixed(0)}%</strong> — strong.`});
+
+  recs.push({lvl:'', icon:'📊', html:`Biggest cost driver: <strong>${top.label}</strong> (${topPct}%). ${top.label.startsWith('Brief') ? 'Cap refresh cadence per tier, or route briefs to Haiku to cut it ~80%.' : 'Tune it in Advanced settings — but it\'s a minor lever.'}`});
+
+  if (isMax) {
+    if (maxDelta < 0)
+      recs.push({lvl:'crit', icon:'⚠', html:`Max Plan costs <strong class="r">${fmt(-maxDelta)}/acct MORE</strong> than API here — the last plan is only ${(step.lastFill*100).toFixed(0)}% full. Add accounts to fill it, or switch to API.`});
+    else
+      recs.push({lvl:'warn', icon:'⚠', html:`Max Plan saves ${fmt(maxDelta)}/acct but carries <strong class="r">ToS risk</strong>. Routing briefs to Haiku gets similar savings with none — prefer that.`});
+  }
+
+  if (p.activeCompanies > p.usersPerAccount * 25)
+    recs.push({lvl:'warn', icon:'•', html:`<strong>Deal-heavy</strong> account (${p.activeCompanies} active / ${p.usersPerAccount} seat${p.usersPerAccount>1?'s':''}). The active-company meter is what keeps it profitable — never offer flat per-seat pricing.`});
+
+  recs.push({lvl:'', icon:'🎯', html:`At ${fmt(pricePerAcct)}/acct, <strong>$1M ARR ≈ ${isFinite(1e6/12/pricePerAcct)?Math.ceil(1e6/12/pricePerAcct).toLocaleString():'—'} accounts</strong>. Mix-shift toward Pro/Power to get there faster.`});
+
+  document.getElementById('recGrid').innerHTML = recs.map(r =>
+    `<div class="rec-item ${r.lvl}"><span class="rec-dot"></span><div class="rec-body">${r.html}</div></div>`
+  ).join('');
+}
+
+// Access gate (client-side; content is in the page source — weak protection by design)
+function checkGate(){
+  const pw = document.getElementById('gatePw').value;
+  if (pw === 'skylarq123') { document.getElementById('gate').style.display = 'none'; }
+  else { document.getElementById('gateErr').textContent = 'Incorrect password.'; document.getElementById('gatePw').select(); }
+}
+
+// init
+syncActive();
+document.getElementById('costplusControls').style.display = 'none';
+document.getElementById('valueControls').style.display    = 'block';
+update();
+</script>
+</body>
+</html>
