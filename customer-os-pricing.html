@@ -505,24 +505,26 @@
     <div class="playbook-body">
       <h4>Best model: value seat + active-company meter</h4>
       <ul>
-        <li><strong>$99/seat base + 15 included active companies per seat + $12 per extra active company</strong>, outbound as a separate add-on. 15/seat covers a real rep's active pipeline (a 2-seat team gets 30 deals included); the $12 meter then prices each extra deal at ~82% marginal margin, so margin recovers to ~77% as accounts grow. Trade-off: margin troughs at ~54% right at the included edge (a team using all its free deals at the flat seat price) vs ~65% with 10/seat. Generous headroom requires the base seat to fund it — going past ~15/seat at $99 collapses mid-band margin; lift the base to ~$119–149 for a higher floor or 20–25 included.</li>
+        <li><strong>$149/seat base + 15 included active companies per seat + $12 per extra active company</strong>, outbound as a separate add-on. The meter on active companies = metering on research cycles (they're proportional: cycles = active × cadence × 30) — just labeled for the buyer. With the optimized engine below, cost-to-serve runs low enough that tiers clear <strong>86–93% margin</strong> (Starter $209 / Growth $627 / Pro $2,152 / Power $6,580 per acct).</li>
         <li><strong>Meter on active companies, never flat per-seat.</strong> A flat seat price runs margin-negative on deal-heavy / low-seat accounts — the meter is the safety mechanism that keeps the tail profitable.</li>
+        <li><strong>The $12 meter is now generous</strong> (≈90% marginal margin under the optimized engine). Lever: lower the overage to undercut competitors / pass savings, or hold it as banked margin.</li>
         <li><strong>Cost-plus is a floor, not a price.</strong> Use it only as a guardrail; price on value above it.</li>
       </ul>
       <h4>What drives cost (sensitivity)</h4>
       <ul>
-        <li><strong>Active companies × refresh cadence</strong> own ~80% of cost — everything else (Slack, meetings, embeddings, storage) is &lt;3% each.</li>
-        <li>Meter price on active companies (the top lever <em>and</em> the clearest value signal); use refresh cadence as your margin throttle, tiered per plan.</li>
+        <li><strong>Refresh engine (optimized vs naive) is the single biggest lever — a ~40% cost swing.</strong> Optimized = cheap Haiku check every cycle + full Sonnet brief only on real signal; naive = full Sonnet every cycle.</li>
+        <li>Within the optimized engine, cost ≈ <strong>active companies × refresh cadence × signal-rate</strong> (the deep-brief volume). Slack digests are the #2 line; meetings (Granola), embeddings, and storage are rounding.</li>
+        <li>Use <strong>signal-rate</strong> and <strong>refresh cadence</strong> as margin throttles, tiered per plan; meter the price on active companies (the clearest value signal).</li>
       </ul>
       <h4>Margin levers</h4>
       <ul>
-        <li><strong>Route briefs to Haiku</strong> before reaching for Max Plan — similar savings (~$45/acct), no Anthropic ToS risk.</li>
+        <li><strong>Keep the optimized refresh engine</strong> (default) — it's the Haiku-check + signal-gated-Sonnet architecture baked in, ~40% cheaper than naive with no Anthropic ToS risk. Prefer it over Max Plan.</li>
         <li><strong>Let model-price deflation flow to margin</strong> — Sonnet is likely to drop ~50%; value pricing pockets that instead of forcing price cuts.</li>
-        <li><strong>Be generous with seats</strong> (≈$0 to serve) to drive expansion; charge on deals, not people.</li>
+        <li><strong>Be generous with seats</strong> (≈$0 to serve) to drive expansion; charge on deals (cycles), not people.</li>
       </ul>
-      <h4>Path to $1M ARR</h4>
+      <h4>Path to $1M ARR ($83K MRR)</h4>
       <ul>
-        <li>At the proposed prices: ~420 Growth, ~250 Pro, or ~125 Power accounts. Mix-shift toward Pro/Power — the meter makes expansion automatic as customers add pipeline.</li>
+        <li>At current tier prices: ~<strong>130 Growth</strong>, ~<strong>40 Pro</strong>, or ~<strong>13 Power</strong> accounts. Far fewer than before because realistic active-deal volumes lifted prices ~3–4×. Mix-shift toward Pro/Power — the meter makes expansion automatic as customers add pipeline.</li>
       </ul>
     </div>
   </details>
