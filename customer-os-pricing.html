@@ -468,7 +468,7 @@
       <div class="value-inputs">
         <div><label>Base $ / seat / mo</label><input type="number" id="baseSeat" value="99" oninput="update()"></div>
         <div><label>Included active / seat</label><input type="number" id="includedActive" value="10" oninput="update()"></div>
-        <div><label>$ / extra active company</label><input type="number" id="overageRate" value="6" oninput="update()"></div>
+        <div><label>$ / extra active company</label><input type="number" id="overageRate" value="12" oninput="update()"></div>
         <div><label>Outbound add-on $/acct</label><input type="number" id="outboundAddon" value="249" oninput="update()"></div>
       </div>
     </div>
@@ -482,7 +482,7 @@
     <div class="playbook-body">
       <h4>Best model: value seat + active-company meter</h4>
       <ul>
-        <li><strong>$99/seat base + 10 included active companies per seat + $6 per extra active company</strong>, outbound as a separate add-on. Yields ~75–85% contribution margin across every tier and a clean, monotonic ladder.</li>
+        <li><strong>$99/seat base + 10 included active companies per seat + $12 per extra active company</strong>, outbound as a separate add-on. The $12 meter prices each active deal at ~82% marginal margin, so blended margin <em>rises</em> with account size (76%→78%) instead of sagging. Yields ~76–82% contribution margin and a clean, monotonic ladder.</li>
         <li><strong>Meter on active companies, never flat per-seat.</strong> A flat seat price runs margin-negative on deal-heavy / low-seat accounts — the meter is the safety mechanism that keeps the tail profitable.</li>
         <li><strong>Cost-plus is a floor, not a price.</strong> Use it only as a guardrail; price on value above it.</li>
       </ul>
