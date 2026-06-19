@@ -440,7 +440,7 @@
   <div class="verdict">
     <div class="verdict-head">▶ What we should do <span class="badge">the recommendation</span></div>
     <ol>
-      <li><strong>Price on credits — tiers with usage beyond:</strong> Starter <strong class="b" id="v-base">$79/mo</strong> includes <span id="v-incl">2,000</span> credits, then <strong class="b" id="v-over">$0.06</strong>/credit. Each AI action costs credits set by <em>our actual API cost</em>, so margin is structural and tokens are never exposed. The customer just sees a budget they understand.</li>
+      <li><strong>Price per seat + credit allowance, usage beyond:</strong> Starter <strong class="b" id="v-base">$49/seat</strong>, each seat includes <span id="v-incl">2,000</span> credits, then <strong class="b" id="v-over">$0.06</strong>/credit. Credits are set by <em>our actual API cost</em> per action, so margin is structural and tokens are never exposed. The customer sees a familiar per-seat price with a usage safety valve.</li>
       <li><strong>Run the optimized refresh engine</strong> — a cheap Haiku "did anything change?" check on every research cycle, full Sonnet brief only on the ~30% that show real signal. This is the single biggest margin lever: it cuts the dominant cost ~40% with no quality loss.</li>
       <li><strong>Default infra = pay-as-you-go Claude API.</strong> The Max Plan is an internal margin lever only (Anthropic ToS risk) — and it only beats the API at the <strong>margin</strong> (plan already paid) or once you have enough accounts to fill a $200 plan.</li>
       <li><strong>Meter on "research cycles," not "active companies"</strong> — cycles are countable and auditable; "active" is fuzzy and arguable at renewal.</li>
@@ -537,17 +537,17 @@
       </div>
       <div class="sub" id="creditActionNote" style="margin-top:10px">Per-action credit cost (auto-set from our API cost) —</div>
 
-      <div class="section-label" style="margin-top:16px;margin-bottom:8px">Plan knobs — monthly fee &amp; included credit bundle per tier</div>
+      <div class="section-label" style="margin-top:16px;margin-bottom:8px">Plan knobs — price per seat &amp; included credits per seat (volume discount by seat count)</div>
       <div class="tier-knobs">
-        <div class="knob-col"><span class="knob-name">Starter</span>
-          <label>Fee $/mo</label><input type="number" id="t1Fee" value="79" oninput="update()">
-          <label>Included credits</label><input type="number" id="t1Incl" value="2000" oninput="update()"></div>
-        <div class="knob-col"><span class="knob-name">Growth</span>
-          <label>Fee $/mo</label><input type="number" id="t2Fee" value="299" oninput="update()">
-          <label>Included credits</label><input type="number" id="t2Incl" value="7000" oninput="update()"></div>
-        <div class="knob-col"><span class="knob-name">Scale</span>
-          <label>Fee $/mo</label><input type="number" id="t3Fee" value="799" oninput="update()">
-          <label>Included credits</label><input type="number" id="t3Incl" value="18000" oninput="update()"></div>
+        <div class="knob-col"><span class="knob-name">Starter · 1–4 seats</span>
+          <label>Price $/seat/mo</label><input type="number" id="t1Fee" value="49" oninput="update()">
+          <label>Credits / seat</label><input type="number" id="t1Incl" value="2000" oninput="update()"></div>
+        <div class="knob-col"><span class="knob-name">Growth · 5–14 seats</span>
+          <label>Price $/seat/mo</label><input type="number" id="t2Fee" value="44" oninput="update()">
+          <label>Credits / seat</label><input type="number" id="t2Incl" value="2000" oninput="update()"></div>
+        <div class="knob-col"><span class="knob-name">Scale · 15+ seats</span>
+          <label>Price $/seat/mo</label><input type="number" id="t3Fee" value="39" oninput="update()">
+          <label>Credits / seat</label><input type="number" id="t3Incl" value="2000" oninput="update()"></div>
       </div>
 
       <div class="section-label" style="margin-top:16px;margin-bottom:8px">What the customer sees — plans &amp; your margin</div>
@@ -919,26 +919,31 @@ function costNum(c, ctx){
 // ---- Credit model (RECOMMENDED) ----
 // Customer buys a credit budget. Each AI action costs credits = (our API $ for that action) ÷ cost-basis.
 // We sell credits above cost-basis, so margin is structural. Tiers = credit bundles; overage = $/credit beyond.
+// Per-seat tiers (volume discount by seat count). Each seat includes a credit allowance; usage beyond is metered.
 function creditTiers(){
   return [
-    { name:'Starter', fee:getNum('t1Fee'), incl:getNum('t1Incl') },
-    { name:'Growth',  fee:getNum('t2Fee'), incl:getNum('t2Incl') },
-    { name:'Scale',   fee:getNum('t3Fee'), incl:getNum('t3Incl') },
+    { name:'Starter', perSeat:getNum('t1Fee'), inclPerSeat:getNum('t1Incl'), minSeats:1  },
+    { name:'Growth',  perSeat:getNum('t2Fee'), inclPerSeat:getNum('t2Incl'), minSeats:5  },
+    { name:'Scale',   perSeat:getNum('t3Fee'), inclPerSeat:getNum('t3Incl'), minSeats:15 },
   ];
 }
-function pickTier(credits){
+function pickTier(seats){
   const ts = creditTiers();
-  for(const t of ts){ if(credits <= t.incl) return t; }
-  return ts[ts.length-1];   // top tier — overage applies beyond its bundle
+  let chosen = ts[0];
+  for(const t of ts){ if(seats >= t.minSeats) chosen = t; }   // highest tier the seat count qualifies for
+  return chosen;
 }
 // credits consumed by an account this month = its true variable (API) cost ÷ cost-basis per credit
 function accountCredits(c){ const basis = Math.max(1e-9, getNum('creditBasis')); return c.apiVarCost / basis; }
-function creditPrice(credits){
-  const t    = pickTier(credits);
+function creditPrice(credits, seats){
+  const s    = Math.max(1, seats);
+  const t    = pickTier(s);
   const sell = getNum('creditSell');
-  const over = Math.max(0, credits - t.incl) * sell;
+  const incl = t.inclPerSeat * s;
+  const overCredits = Math.max(0, credits - incl);
+  const over = overCredits * sell;
   const addon= outboundOn ? getNum('outboundAddon') : 0;
-  return { tier:t, base:t.fee, overCredits:Math.max(0,credits-t.incl), over, addon, total:t.fee + over + addon };
+  return { tier:t, seats:s, base:t.perSeat * s, incl, overCredits, over, addon, total:t.perSeat*s + over + addon };
 }
 
 // Usage-based (bottoms-up) price — meter on actual AI work, NOT the fuzzy "active companies".
@@ -975,17 +980,17 @@ function renderPlans(p, ctx){
     const tc=computeCosts(pp);
     const cost=costNum(tc, ctx);
     const credits=accountCredits(tc);
-    const cpr=creditPrice(credits);
+    const cpr=creditPrice(credits, rep.seats);
     const margin=cpr.total>0?(1-cost/cpr.total)*100:0;
     const mcls=margin>=65?'g':margin>=45?'y':'r';
     const deepBriefCr=Math.max(1,Math.round(tc.actionUnits.deepBrief/Math.max(1e-9,basis)));
-    const briefsInBundle=Math.round(t.incl/deepBriefCr);
+    const briefsInBundle=Math.round(t.inclPerSeat/deepBriefCr);
     return `<div class="plan-card ${i===2?'feature':''}">
       <div class="plan-cname">${t.name}</div>
-      <div class="plan-cprice">${fmt(t.fee)}<span>/mo</span></div>
-      <div class="plan-cincl">Includes <strong>${t.incl.toLocaleString()} credits</strong><br><span style="color:#64748b">≈ ${briefsInBundle.toLocaleString()} deep research briefs</span></div>
+      <div class="plan-cprice">${fmt(t.perSeat)}<span>/seat/mo</span></div>
+      <div class="plan-cincl">Includes <strong>${t.inclPerSeat.toLocaleString()} credits / seat</strong><br><span style="color:#64748b">≈ ${briefsInBundle.toLocaleString()} deep briefs per seat</span></div>
       <div class="plan-cbeyond">then ${fmt(sell)}/credit beyond</div>
-      <div class="plan-cmargin">${rep.seats} seats · ${rep.deals} deals → ${Math.round(credits).toLocaleString()} cr → pays <b>${fmt(cpr.total)}</b><br>cost ${fmt(cost)} → <b class="${mcls}">${margin.toFixed(0)}% margin</b></div>
+      <div class="plan-cmargin">${rep.seats} seat${rep.seats>1?'s':''} · ${rep.deals} deals → ${Math.round(credits).toLocaleString()} cr → pays <b>${fmt(cpr.total)}</b><br>cost ${fmt(cost)} → <b class="${mcls}">${margin.toFixed(0)}% margin</b></div>
     </div>`;
   }).join('');
   html += `<div class="plan-card"><div class="plan-cname">Enterprise</div><div class="plan-cprice">Custom</div>
@@ -1071,7 +1076,7 @@ function update(){
   const costPlusAcct   = costPlusSeat * upa;
   const cyclesPerMonth = c.briefCallsPerMonth;            // research cycles (refreshes)
   const creditsUsed    = accountCredits(c);               // credits this account consumes/mo (= API $ ÷ basis)
-  const cp             = creditPrice(creditsUsed);        // {tier, base, over, overCredits, addon, total}
+  const cp             = creditPrice(creditsUsed, upa);   // {tier, base, over, overCredits, addon, total}
   const pricePerAcct   = pricingMode==='credits' ? cp.total : costPlusAcct;
 
   // ---- Revenue & contribution (real margin after fees) ----
@@ -1090,7 +1095,7 @@ function update(){
   document.getElementById('totalCostSub').textContent = `AI ${fmt(c.totalAI)} + tools ${fmt(toolsPerAcct+maxPlanPerAcct)} + infra ${fmt(infra)} + storage ${fmt(storagePerAcct)}`;
   document.getElementById('recPrice').textContent = fmt(pricePerAcct);
   document.getElementById('recPriceSub').textContent = pricingMode==='credits'
-    ? `${cp.tier.name} plan · ${Math.round(creditsUsed).toLocaleString()} credits/mo used`
+    ? `${cp.tier.name} · ${upa} seat${upa>1?'s':''} × ${fmt(cp.tier.perSeat)} · ${Math.round(creditsUsed).toLocaleString()} credits used`
     : `${fmt(costPlusSeat)}/seat × ${upa} (cost-plus ${targetMargin}%)`;
   const cm=document.getElementById('contribMargin');
   cm.textContent = contribMarginPct.toFixed(0)+'%';
@@ -1138,8 +1143,8 @@ function update(){
   const marginWord = contribMarginPct>=70?'<strong class="g">strong</strong>':contribMarginPct>=50?'healthy':'<strong style="color:#f87171">thin</strong>';
   // keep the recommendation bullet (credit tiers) in sync with the actual inputs (safe to share)
   const t1=creditTiers()[0];
-  const vb=document.getElementById('v-base'); if(vb) vb.textContent = fmt(t1.fee)+'/mo';
-  const vi=document.getElementById('v-incl'); if(vi) vi.textContent = t1.incl.toLocaleString();
+  const vb=document.getElementById('v-base'); if(vb) vb.textContent = fmt(t1.perSeat)+'/seat';
+  const vi=document.getElementById('v-incl'); if(vi) vi.textContent = t1.inclPerSeat.toLocaleString();
   const vo=document.getElementById('v-over'); if(vo) vo.textContent = fmt(getNum('creditSell'));
   const motion = pricePerAcct<=149
     ? `<strong class="b">self-serve / volume play</strong> — keep CAC near-zero (no sales team), win on signups`
@@ -1215,7 +1220,7 @@ function update(){
     return costNum(cc, ctx);
   });
   const lineRev=acRange.map((ac,i)=>{
-    if(pricingMode==='credits'){ const tcc=computeCosts({...p,activeCompanies:ac}); return creditPrice(accountCredits(tcc)).total; }
+    if(pricingMode==='credits'){ const tcc=computeCosts({...p,activeCompanies:ac}); return creditPrice(accountCredits(tcc), upa).total; }
     return (lineCost[i]/upa)/(1-targetMargin/100)*upa;
   });
   if(lineChart){
@@ -1310,11 +1315,11 @@ function update(){
 
   const t=cp.tier;
   document.getElementById('overageNote').innerHTML =
-    `<strong>How overage works:</strong> each plan includes a credit bundle; beyond it you pay ${fmt(sell)}/credit. ` +
-    `This account (<strong>${Math.round(creditsUsed).toLocaleString()} credits</strong>) lands on <strong class="b">${t.name}</strong>: ` +
+    `<strong>How overage works:</strong> each seat includes ${t.inclPerSeat.toLocaleString()} credits; beyond the account's pooled allowance you pay ${fmt(sell)}/credit. ` +
+    `This account (<strong>${upa} seat${upa>1?'s':''}</strong>, <strong>${Math.round(creditsUsed).toLocaleString()} credits</strong>) is on <strong class="b">${t.name}</strong>: ` +
     (cp.overCredits>0
-      ? `${fmt(t.fee)} fee + ${Math.round(cp.overCredits).toLocaleString()} over-credits × ${fmt(sell)} = <strong class="g">${fmt(cp.total)}</strong>/mo`
-      : `${fmt(t.fee)} fee, ${Math.round(t.incl-creditsUsed).toLocaleString()} credits to spare → <strong class="g">${fmt(cp.total)}</strong>/mo`) +
+      ? `${upa}×${fmt(t.perSeat)} (${fmt(cp.base)}) + ${Math.round(cp.overCredits).toLocaleString()} over-credits × ${fmt(sell)} = <strong class="g">${fmt(cp.total)}</strong>/mo`
+      : `${upa}×${fmt(t.perSeat)} = ${fmt(cp.base)}/mo, ${Math.round(cp.incl-creditsUsed).toLocaleString()} credits to spare → <strong class="g">${fmt(cp.total)}</strong>/mo`) +
     ` at <strong class="${contribMarginPct>=60?'g':''}">${contribMarginPct.toFixed(0)}% margin</strong>.`;
 
   document.getElementById('pricingNote').innerHTML = pricingMode==='credits'
