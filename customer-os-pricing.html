@@ -149,6 +149,18 @@
   .callout { background: #4f6ef70d; border: 1px solid #4f6ef726; border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #818cf8; line-height: 1.55; margin-top: 12px; }
   .callout strong { color: #a5b4fc; }
 
+  /* The call — top-of-page verdict */
+  .verdict { background: linear-gradient(135deg, #1b2440 0%, #181f33 100%); border: 1px solid #34406b; border-radius: 12px; padding: 18px 20px; margin-bottom: 18px; }
+  .verdict-head { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #a5b4fc; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; margin-bottom: 12px; }
+  .verdict-head .badge { font-size: 9px; color: #c7d2fe; background: #4f6ef725; border: 1px solid #4f6ef740; border-radius: 20px; padding: 2px 9px; letter-spacing: 0.04em; }
+  .verdict ol { margin: 0; padding-left: 20px; }
+  .verdict li { font-size: 12.5px; color: #cbd5e1; line-height: 1.55; margin-bottom: 7px; }
+  .verdict li strong { color: #f1f5f9; font-weight: 600; }
+  .verdict li strong.g { color: #4ade80; }
+  .verdict li strong.b { color: #a5b4fc; }
+  .verdict-live { margin-top: 12px; padding-top: 12px; border-top: 1px solid #ffffff14; font-size: 12.5px; color: #e2e8f0; line-height: 1.6; }
+  .verdict-live .chip { display: inline-block; font-family: var(--mono); font-variant-numeric: tabular-nums; background: #0f1320; border: 1px solid #2d3a5e; border-radius: 6px; padding: 1px 7px; color: #f1f5f9; margin: 0 2px; }
+
   /* Collapsible playbook */
   details.playbook { background: #1a2030; border: 1px solid #1e2535; border-radius: 10px; margin-bottom: 18px; overflow: hidden; }
   details.playbook > summary { cursor: pointer; list-style: none; padding: 15px 18px; font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; display: flex; align-items: center; gap: 8px; }
@@ -216,6 +228,14 @@
           <input type="number" id="maxPlanCeiling" value="100" min="1" step="1" oninput="update()">
           <div class="sub" style="margin-top:3px">Est. ~100M/mo for a $200 Max 20× plan run 24/7. Anthropic doesn't publish — <strong style="color:#facc15">verify with real usage</strong>; this sets whether Max beats API.</div>
         </div>
+      </div>
+      <div style="margin-top:14px">
+        <label style="display:block;margin-bottom:6px">Costing method — how the plan's $ is charged to each account</label>
+        <div class="mode-toggle" style="display:inline-flex">
+          <button class="mode-btn active" onclick="setMaxCosting('allocated',this)">Allocated (each account bears its share)</button>
+          <button class="mode-btn" onclick="setMaxCosting('marginal',this)">Marginal (plan already paid)</button>
+        </div>
+        <div class="sub" id="maxCostingNote" style="margin-top:5px">Allocated: $200×plans ÷ accounts loads onto every account's COGS — the honest fully-loaded unit cost. Switch to Marginal if you treat the plan as a fixed cost the company runs anyway: then a customer's marginal Claude cost is $0 until they spill a new plan, so Max is always cheaper than API at the margin. Business contribution is identical either way — only per-account attribution changes.</div>
       </div>
       <div class="capacity-bar-wrap">
         <div class="capacity-bar-header">
@@ -397,6 +417,17 @@
 <!-- RESULTS -->
 <div class="results">
 
+  <div class="verdict">
+    <div class="verdict-head">▶ What we should do <span class="badge">the recommendation</span></div>
+    <ol>
+      <li><strong>Price value-based, never flat per-seat:</strong> <strong class="b">$149/seat</strong> + 15 included active companies/seat + <strong class="b">$12</strong> per extra active company. Outbound is a separate add-on. This makes deal-heavy accounts (your highest-cost, highest-value users) pay for what they use.</li>
+      <li><strong>Run the optimized refresh engine</strong> — a cheap Haiku "did anything change?" check on every research cycle, full Sonnet brief only on the ~30% that show real signal. This is the single biggest margin lever: it cuts the dominant cost ~40% with no quality loss.</li>
+      <li><strong>Default infra = pay-as-you-go Claude API.</strong> The Max Plan is an internal margin lever only (Anthropic ToS risk) — and it only beats the API at the <strong>margin</strong> (plan already paid) or once you have enough accounts to fill a $200 plan.</li>
+      <li><strong>Meter on "research cycles," not "active companies"</strong> — cycles are countable and auditable; "active" is fuzzy and arguable at renewal.</li>
+    </ol>
+    <div class="verdict-live" id="verdictLive">Calculating…</div>
+  </div>
+
   <div class="summary-cards">
     <div class="card">
       <div class="card-label">Cost to serve / account</div>
@@ -539,6 +570,7 @@ let outboundOn     = false;
 let whisperHosted  = false;
 let refreshMode    = 'optimized';   // 'optimized' (Haiku check + signal-gated Sonnet) | 'naive' (full Sonnet every cycle)
 let sharedTools    = true;   // Instantly amortized across all accounts by default (agency workspace)
+let maxCosting     = 'allocated';  // 'allocated' (plan ÷ accounts onto COGS) | 'marginal' (plan = fixed cost, per-customer Claude ≈ $0)
 
 const ACTIVITY = {
   quiet:  { emails: 10,  slackMsgs: 50,   slackChannels: 3  },
@@ -580,6 +612,12 @@ function setPricing(mode, btn){
   btn.classList.add('active');
   document.getElementById('costplusControls').style.display = mode==='costplus'?'block':'none';
   document.getElementById('valueControls').style.display    = mode==='value'?'block':'none';
+  update();
+}
+function setMaxCosting(m, btn){
+  maxCosting = m;
+  btn.parentElement.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
   update();
 }
 function setActivity(key, el){
@@ -821,7 +859,7 @@ function costNum(c, ctx){
   const totalStorageGB = c.storageGB * ctx.payingAccounts;
   const billableGB     = Math.max(0, totalStorageGB - ctx.freeGB);
   const storagePerAcct = ctx.payingAccounts>0 ? billableGB * ctx.pGB / ctx.payingAccounts : 0;
-  const maxPlanPerAcct = maxPlanStep(c, ctx).perAcct;
+  const maxPlanPerAcct = (ctx.isMax && ctx.maxCosting==='marginal') ? 0 : maxPlanStep(c, ctx).perAcct;
   return c.totalAI + maxPlanPerAcct + (ctx.toolsPerAcct||0) + ctx.infra + storagePerAcct + ctx.supportCost;
 }
 
@@ -877,11 +915,13 @@ function update(){
 
   const ctx = { payingAccounts, freeGB:getNum('freeGB'), pGB:getNum('pGB'),
                 toolsPerAcct, infra, supportCost,
-                isMax, ceilingTok:getNum('maxPlanCeiling')*1e6, planCost:getNum('maxPlanCost') };
+                isMax, maxCosting, ceilingTok:getNum('maxPlanCeiling')*1e6, planCost:getNum('maxPlanCost') };
 
   const c = computeCosts(p);
   const step = maxPlanStep(c, ctx);
-  const maxPlanPerAcct = step.perAcct;
+  const isMarginal = isMax && maxCosting==='marginal';
+  const maxPlanPerAcct = isMarginal ? 0 : step.perAcct;   // marginal: plan is a fixed cost, not loaded per account
+  const planFixedTotal = isMax ? step.totalCost : 0;       // full $200×plans, charged once to the business
 
   // Max Plan capacity bar — shows the step function (plans needed + fill of the last plan)
   if(isMax){
@@ -892,7 +932,10 @@ function update(){
     const note=document.getElementById('capacityNote');
     const acctsTxt = isFinite(step.acctsPerPlan) ? `~${step.acctsPerPlan} accounts fit per plan` : 'one account exceeds a full plan';
     note.className = 'capacity-note ' + (step.lastFill<0.7?'ok':step.lastFill<0.95?'warn':'over');
-    note.textContent = `${totalTokM.toFixed(1)}M Claude tokens/mo (all ops) across ${payingAccounts} accts → ${step.plans} plan${step.plans>1?'s':''} (${fmt(maxPlanPerAcct)}/acct). ${acctsTxt}; last plan ${(step.lastFill*100).toFixed(0)}% full.`;
+    const chargeTxt = isMarginal
+      ? `Marginal mode: ${fmt(planFixedTotal)} fixed/mo to the business, ${fmt(0)}/acct on COGS (Claude ≈ free at the margin).`
+      : `${fmt(step.perAcct)}/acct loaded onto COGS.`;
+    note.textContent = `${totalTokM.toFixed(1)}M Claude tokens/mo (all ops) across ${payingAccounts} accts → ${step.plans} plan${step.plans>1?'s':''}. ${chargeTxt} ${acctsTxt}; last plan ${(step.lastFill*100).toFixed(0)}% full.`;
   }
 
   // Total cost / account
@@ -914,7 +957,8 @@ function update(){
   const feeFixed   = getNum('feeFixed');
   const fees       = grossRev*feePct + feeFixed*payingAccounts;
   const netRev     = grossRev - fees;
-  const totalCostBiz = totalCost * payingAccounts;
+  // In marginal mode the plan isn't in per-acct totalCost, so add it once here → business P&L is identical either way.
+  const totalCostBiz = totalCost * payingAccounts + (isMarginal ? planFixedTotal : 0);
   const contribution = netRev - totalCostBiz;
   const contribMarginPct = grossRev>0 ? contribution/grossRev*100 : 0;
 
@@ -945,11 +989,33 @@ function update(){
   const topPct=totalCost>0?Math.round(top.cost/totalCost*100):0;
   const maxDelta = isMax ? (c.claudeApiCost - maxPlanPerAcct) : 0;  // all-Claude API cost vs the plan share; +ve = Max cheaper
   const savedNote = isMax
-    ? (maxDelta>=0
-        ? ` &nbsp;·&nbsp; <span class="green">Max Plan saves ${fmt(maxDelta)}/acct vs API</span>`
-        : ` &nbsp;·&nbsp; <span class="red">Max Plan costs ${fmt(-maxDelta)}/acct MORE than API here (underfilled plan)</span>`)
+    ? (isMarginal
+        ? ` &nbsp;·&nbsp; <span class="green">Marginal: Max saves ${fmt(maxDelta)}/acct vs API</span> (plan ${fmt(planFixedTotal)}/mo fixed)`
+        : (maxDelta>=0
+            ? ` &nbsp;·&nbsp; <span class="green">Max Plan saves ${fmt(maxDelta)}/acct vs API</span>`
+            : ` &nbsp;·&nbsp; <span class="red">Max Plan costs ${fmt(-maxDelta)}/acct MORE than API here (underfilled plan)</span>`))
     : '';
   const acctsTo1M = pricePerAcct>0 ? Math.ceil((1e6/12)/pricePerAcct) : Infinity;
+
+  // ---- Live "what to do" readout (plain-English verdict that reacts to inputs) ----
+  const chip = v => `<span class="chip">${v}</span>`;
+  const engineVerdict = refreshMode==='optimized'
+    ? `Engine <strong class="g">Optimized ✓</strong>`
+    : `Engine <strong style="color:#facc15">Naive</strong> — switch to Optimized to cut ~40%`;
+  const priceVerdict = pricingMode==='value'
+    ? `Pricing <strong class="g">Value ✓</strong>`
+    : `Pricing <strong style="color:#facc15">Cost-plus</strong> — that's a floor, switch to Value`;
+  let infraVerdict;
+  if(!isMax) infraVerdict = `Infra <strong class="g">Claude API ✓</strong> (honest default)`;
+  else if(isMarginal) infraVerdict = `Infra <strong class="b">Max Plan, marginal</strong> — saves ${fmt(maxDelta)}/acct (plan ${fmt(planFixedTotal)}/mo fixed); <strong style="color:#facc15">ToS risk</strong>`;
+  else infraVerdict = maxDelta>=0
+      ? `Infra <strong class="b">Max Plan</strong> — saves ${fmt(maxDelta)}/acct; <strong style="color:#facc15">ToS risk</strong>`
+      : `Infra <strong style="color:#f87171">Max Plan underfilled</strong> (+${fmt(-maxDelta)}/acct vs API) — add accounts or use API`;
+  const marginWord = contribMarginPct>=70?'<strong class="g">strong</strong>':contribMarginPct>=50?'healthy':'<strong style="color:#f87171">thin</strong>';
+  document.getElementById('verdictLive').innerHTML =
+    `<strong>Right now:</strong> serving one account costs ${chip(fmt(totalCost))}, you charge ${chip(fmt(pricePerAcct))} → ${chip(contribMarginPct.toFixed(0)+'%')} contribution margin (${marginWord}), reaching $1M ARR at ${chip(isFinite(acctsTo1M)?acctsTo1M.toLocaleString():'—')} accounts. ` +
+    `&nbsp;·&nbsp; ${infraVerdict} &nbsp;·&nbsp; ${engineVerdict} &nbsp;·&nbsp; ${priceVerdict}.`;
+
   document.getElementById('insightBar').innerHTML =
     `Biggest cost: <strong>${top.label}</strong> (${topPct}%)` +
     ` &nbsp;·&nbsp; Cost/acct <strong>${fmt(totalCost)}</strong> → price <strong>${fmt(pricePerAcct)}</strong>` +
