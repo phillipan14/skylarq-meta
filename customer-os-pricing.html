@@ -440,7 +440,7 @@
   <div class="verdict">
     <div class="verdict-head">▶ What we should do <span class="badge">the recommendation</span></div>
     <ol>
-      <li><strong>Price per seat + credit allowance, usage beyond:</strong> Starter <strong class="b" id="v-base">$49/seat</strong>, each seat includes <span id="v-incl">2,000</span> credits, then <strong class="b" id="v-over">$0.06</strong>/credit. Credits are set by <em>our actual API cost</em> per action, so margin is structural and tokens are never exposed. The customer sees a familiar per-seat price with a usage safety valve.</li>
+      <li><strong>Flat per-seat plans with a usage cap — no overage (like Claude Code):</strong> Starter <strong class="b" id="v-base">$49/seat</strong> covers up to <span id="v-incl">2,000</span> credits/seat; hit the cap and you upgrade to Pro/Max, never a surprise bill. Caps are set from <em>our actual API cost</em>, so even a maxed plan stays profitable and tokens are never exposed.</li>
       <li><strong>Run the optimized refresh engine</strong> — a cheap Haiku "did anything change?" check on every research cycle, full Sonnet brief only on the ~30% that show real signal. This is the single biggest margin lever: it cuts the dominant cost ~40% with no quality loss.</li>
       <li><strong>Default infra = pay-as-you-go Claude API.</strong> The Max Plan is an internal margin lever only (Anthropic ToS risk) — and it only beats the API at the <strong>margin</strong> (plan already paid) or once you have enough accounts to fill a $200 plan.</li>
       <li><strong>Meter on "research cycles," not "active companies"</strong> — cycles are countable and auditable; "active" is fuzzy and arguable at renewal.</li>
@@ -531,23 +531,23 @@
     </div>
 
     <div id="creditControls">
-      <div class="value-inputs" style="grid-template-columns:repeat(2,1fr);max-width:520px">
-        <div><label>Internal cost basis — $ / credit</label><input type="number" id="creditBasis" value="0.01" step="0.001" oninput="update()"><div class="sub" style="margin-top:3px">what 1 credit costs us (set from API cost)</div></div>
-        <div><label>Sell price — $ / credit (overage rate)</label><input type="number" id="creditSell" value="0.06" step="0.005" oninput="update()"><div class="sub" style="margin-top:3px" id="creditMarginNote">structural margin —</div></div>
+      <div class="value-inputs" style="grid-template-columns:1fr;max-width:340px">
+        <div><label>Internal cost basis — $ / credit</label><input type="number" id="creditBasis" value="0.01" step="0.001" oninput="update()"><div class="sub" style="margin-top:3px" id="creditMarginNote">1 credit = our API cost unit; sets each plan's usage cap</div></div>
       </div>
+      <input type="hidden" id="creditSell" value="0.06">
       <div class="sub" id="creditActionNote" style="margin-top:10px">Per-action credit cost (auto-set from our API cost) —</div>
 
-      <div class="section-label" style="margin-top:16px;margin-bottom:8px">Plan knobs — price per seat &amp; included credits per seat (volume discount by seat count)</div>
+      <div class="section-label" style="margin-top:16px;margin-bottom:8px">Plan knobs — flat price per seat &amp; monthly usage cap per seat (no overage — like Claude Code)</div>
       <div class="tier-knobs">
-        <div class="knob-col"><span class="knob-name">Starter · 1–4 seats</span>
+        <div class="knob-col"><span class="knob-name">Starter</span>
           <label>Price $/seat/mo</label><input type="number" id="t1Fee" value="49" oninput="update()">
-          <label>Credits / seat</label><input type="number" id="t1Incl" value="2000" oninput="update()"></div>
-        <div class="knob-col"><span class="knob-name">Growth · 5–14 seats</span>
-          <label>Price $/seat/mo</label><input type="number" id="t2Fee" value="44" oninput="update()">
-          <label>Credits / seat</label><input type="number" id="t2Incl" value="2000" oninput="update()"></div>
-        <div class="knob-col"><span class="knob-name">Scale · 15+ seats</span>
-          <label>Price $/seat/mo</label><input type="number" id="t3Fee" value="39" oninput="update()">
-          <label>Credits / seat</label><input type="number" id="t3Incl" value="2000" oninput="update()"></div>
+          <label>Credit cap / seat</label><input type="number" id="t1Incl" value="2000" oninput="update()"></div>
+        <div class="knob-col"><span class="knob-name">Pro</span>
+          <label>Price $/seat/mo</label><input type="number" id="t2Fee" value="99" oninput="update()">
+          <label>Credit cap / seat</label><input type="number" id="t2Incl" value="4500" oninput="update()"></div>
+        <div class="knob-col"><span class="knob-name">Max</span>
+          <label>Price $/seat/mo</label><input type="number" id="t3Fee" value="199" oninput="update()">
+          <label>Credit cap / seat</label><input type="number" id="t3Incl" value="9000" oninput="update()"></div>
       </div>
 
       <div class="section-label" style="margin-top:16px;margin-bottom:8px">What the customer sees — plans &amp; your margin</div>
@@ -919,31 +919,30 @@ function costNum(c, ctx){
 // ---- Credit model (RECOMMENDED) ----
 // Customer buys a credit budget. Each AI action costs credits = (our API $ for that action) ÷ cost-basis.
 // We sell credits above cost-basis, so margin is structural. Tiers = credit bundles; overage = $/credit beyond.
-// Per-seat tiers (volume discount by seat count). Each seat includes a credit allowance; usage beyond is metered.
+// Claude-Code-style plans: flat per-seat price + a usage CAP per seat. NO overage billing —
+// exceed your cap and you upgrade to the next plan (or throttle until reset). Cap = our cost protection.
 function creditTiers(){
   return [
-    { name:'Starter', perSeat:getNum('t1Fee'), inclPerSeat:getNum('t1Incl'), minSeats:1  },
-    { name:'Growth',  perSeat:getNum('t2Fee'), inclPerSeat:getNum('t2Incl'), minSeats:5  },
-    { name:'Scale',   perSeat:getNum('t3Fee'), inclPerSeat:getNum('t3Incl'), minSeats:15 },
+    { name:'Starter', perSeat:getNum('t1Fee'), capPerSeat:getNum('t1Incl') },
+    { name:'Pro',     perSeat:getNum('t2Fee'), capPerSeat:getNum('t2Incl') },
+    { name:'Max',     perSeat:getNum('t3Fee'), capPerSeat:getNum('t3Incl') },
   ];
-}
-function pickTier(seats){
-  const ts = creditTiers();
-  let chosen = ts[0];
-  for(const t of ts){ if(seats >= t.minSeats) chosen = t; }   // highest tier the seat count qualifies for
-  return chosen;
 }
 // credits consumed by an account this month = its true variable (API) cost ÷ cost-basis per credit
 function accountCredits(c){ const basis = Math.max(1e-9, getNum('creditBasis')); return c.apiVarCost / basis; }
+// pick the cheapest plan whose pooled cap covers the account's usage; if none, top plan (over cap → Enterprise)
+function pickTier(credits, seats){
+  const s = Math.max(1, seats);
+  const ts = creditTiers();
+  for(const t of ts){ if(credits <= t.capPerSeat * s) return t; }
+  return ts[ts.length-1];
+}
 function creditPrice(credits, seats){
-  const s    = Math.max(1, seats);
-  const t    = pickTier(s);
-  const sell = getNum('creditSell');
-  const incl = t.inclPerSeat * s;
-  const overCredits = Math.max(0, credits - incl);
-  const over = overCredits * sell;
-  const addon= outboundOn ? getNum('outboundAddon') : 0;
-  return { tier:t, seats:s, base:t.perSeat * s, incl, overCredits, over, addon, total:t.perSeat*s + over + addon };
+  const s   = Math.max(1, seats);
+  const t   = pickTier(credits, s);
+  const cap = t.capPerSeat * s;
+  const addon = outboundOn ? getNum('outboundAddon') : 0;
+  return { tier:t, seats:s, total:t.perSeat*s + addon, base:t.perSeat*s, cap, over: credits>cap, capUsedPct: cap>0?credits/cap*100:0 };
 }
 
 // Usage-based (bottoms-up) price — meter on actual AI work, NOT the fuzzy "active companies".
@@ -973,30 +972,35 @@ function valuePrice(activeCompanies, seats){
 function renderPlans(p, ctx){
   const basis=getNum('creditBasis'), sell=getNum('creditSell');
   const tiers=creditTiers();
-  const reps=[{seats:1,deals:12},{seats:5,deals:70},{seats:12,deals:200}];
+  const reps=[{seats:1,deals:12},{seats:1,deals:35},{seats:1,deals:70}];
+  const basisL=getNum('creditBasis');
   let html = tiers.map((t,i)=>{
     const rep=reps[i];
     const pp={...p, activeCompanies:rep.deals, usersPerAccount:rep.seats};
     const tc=computeCosts(pp);
     const cost=costNum(tc, ctx);
     const credits=accountCredits(tc);
-    const cpr=creditPrice(credits, rep.seats);
-    const margin=cpr.total>0?(1-cost/cpr.total)*100:0;
+    const price=t.perSeat*rep.seats;
+    const margin=price>0?(1-cost/price)*100:0;            // typical-account margin
     const mcls=margin>=65?'g':margin>=45?'y':'r';
-    const deepBriefCr=Math.max(1,Math.round(tc.actionUnits.deepBrief/Math.max(1e-9,basis)));
-    const briefsInBundle=Math.round(t.inclPerSeat/deepBriefCr);
+    // worst case: a seat maxes its cap (cap credits × basis = cost), at the flat price
+    const maxedCostPerSeat=t.capPerSeat*basisL;
+    const maxedMargin=t.perSeat>0?(1-maxedCostPerSeat/t.perSeat)*100:0;
+    const mxcls=maxedMargin>=50?'g':maxedMargin>=30?'y':'r';
+    const deepBriefCr=Math.max(1,Math.round(tc.actionUnits.deepBrief/Math.max(1e-9,basisL)));
+    const briefsCap=Math.round(t.capPerSeat/deepBriefCr);
     return `<div class="plan-card ${i===2?'feature':''}">
       <div class="plan-cname">${t.name}</div>
       <div class="plan-cprice">${fmt(t.perSeat)}<span>/seat/mo</span></div>
-      <div class="plan-cincl">Includes <strong>${t.inclPerSeat.toLocaleString()} credits / seat</strong><br><span style="color:#64748b">≈ ${briefsInBundle.toLocaleString()} deep briefs per seat</span></div>
-      <div class="plan-cbeyond">then ${fmt(sell)}/credit beyond</div>
-      <div class="plan-cmargin">${rep.seats} seat${rep.seats>1?'s':''} · ${rep.deals} deals → ${Math.round(credits).toLocaleString()} cr → pays <b>${fmt(cpr.total)}</b><br>cost ${fmt(cost)} → <b class="${mcls}">${margin.toFixed(0)}% margin</b></div>
+      <div class="plan-cincl">Up to <strong>${t.capPerSeat.toLocaleString()} credits / seat</strong><br><span style="color:#64748b">≈ ${briefsCap.toLocaleString()} deep briefs/seat · no overage</span></div>
+      <div class="plan-cbeyond">hit the cap → upgrade plan</div>
+      <div class="plan-cmargin">e.g. ${rep.seats} seat${rep.seats>1?'s':''}/${rep.deals} deals → pays <b>${fmt(price)}</b>, cost ${fmt(cost)} → <b class="${mcls}">${margin.toFixed(0)}%</b><br><span style="color:#475569">if seat maxes cap → </span><b class="${mxcls}">${maxedMargin.toFixed(0)}% floor</b></div>
     </div>`;
   }).join('');
   html += `<div class="plan-card"><div class="plan-cname">Enterprise</div><div class="plan-cprice">Custom</div>
-    <div class="plan-cincl">Unlimited credits<br><span style="color:#64748b">SSO · SLA · dedicated CSM</span></div>
-    <div class="plan-cbeyond">negotiated volume rate</div>
-    <div class="plan-cmargin">priced per deal</div></div>`;
+    <div class="plan-cincl">Unlimited usage<br><span style="color:#64748b">SSO · SLA · dedicated CSM</span></div>
+    <div class="plan-cbeyond">for accounts over Max</div>
+    <div class="plan-cmargin">negotiated</div></div>`;
   document.getElementById('planGrid').innerHTML=html;
 }
 
@@ -1132,7 +1136,7 @@ function update(){
     ? `Engine <strong class="g">Optimized ✓</strong>`
     : `Engine <strong style="color:#facc15">Naive</strong> — switch to Optimized to cut ~40%`;
   const priceVerdict = pricingMode==='credits'
-    ? `Pricing <strong class="g">Credits ✓</strong> (tiers + usage overage)`
+    ? `Pricing <strong class="g">Plans ✓</strong> (flat per-seat + usage cap, no overage)`
     : `Pricing <strong style="color:#facc15">Cost-plus</strong> — that's a floor`;
   let infraVerdict;
   if(!isMax) infraVerdict = `Infra <strong class="g">Claude API ✓</strong> (honest default)`;
@@ -1144,8 +1148,7 @@ function update(){
   // keep the recommendation bullet (credit tiers) in sync with the actual inputs (safe to share)
   const t1=creditTiers()[0];
   const vb=document.getElementById('v-base'); if(vb) vb.textContent = fmt(t1.perSeat)+'/seat';
-  const vi=document.getElementById('v-incl'); if(vi) vi.textContent = t1.inclPerSeat.toLocaleString();
-  const vo=document.getElementById('v-over'); if(vo) vo.textContent = fmt(getNum('creditSell'));
+  const vi=document.getElementById('v-incl'); if(vi) vi.textContent = t1.capPerSeat.toLocaleString();
   const motion = pricePerAcct<=149
     ? `<strong class="b">self-serve / volume play</strong> — keep CAC near-zero (no sales team), win on signups`
     : `<strong class="b">sales-led</strong> — higher price funds a sales motion, fewer accounts to $1M`;
@@ -1294,11 +1297,10 @@ function update(){
     </div>`;
   }).join('');
 
-  // ---- Credit model: economics notes + customer-facing plan cards ----
-  const basis = getNum('creditBasis'), sell = getNum('creditSell');
-  const structMargin = sell>0 ? (1 - basis/sell)*100 : 0;
+  // ---- Credit model (Claude-Code style): caps + customer-facing plan cards ----
+  const basis = getNum('creditBasis');
   document.getElementById('creditMarginNote').innerHTML =
-    `structural margin <strong style="color:${structMargin>=60?'#4ade80':'#facc15'}">${structMargin.toFixed(0)}%</strong> on every credit (sell ${fmt(sell)} vs cost ${fmt(basis)})`;
+    `1 credit = <strong class="b">${fmt(basis)}</strong> of our API cost — this sets each plan's usage cap & your margin`;
   // per-action credit cost = action's API $ ÷ basis (min 1 credit)
   const cr = u => Math.max(1, Math.round(u/Math.max(1e-9,basis)));
   const au = c.actionUnits;
@@ -1315,15 +1317,13 @@ function update(){
 
   const t=cp.tier;
   document.getElementById('overageNote').innerHTML =
-    `<strong>How overage works:</strong> each seat includes ${t.inclPerSeat.toLocaleString()} credits; beyond the account's pooled allowance you pay ${fmt(sell)}/credit. ` +
-    `This account (<strong>${upa} seat${upa>1?'s':''}</strong>, <strong>${Math.round(creditsUsed).toLocaleString()} credits</strong>) is on <strong class="b">${t.name}</strong>: ` +
-    (cp.overCredits>0
-      ? `${upa}×${fmt(t.perSeat)} (${fmt(cp.base)}) + ${Math.round(cp.overCredits).toLocaleString()} over-credits × ${fmt(sell)} = <strong class="g">${fmt(cp.total)}</strong>/mo`
-      : `${upa}×${fmt(t.perSeat)} = ${fmt(cp.base)}/mo, ${Math.round(cp.incl-creditsUsed).toLocaleString()} credits to spare → <strong class="g">${fmt(cp.total)}</strong>/mo`) +
-    ` at <strong class="${contribMarginPct>=60?'g':''}">${contribMarginPct.toFixed(0)}% margin</strong>.`;
+    `<strong>No overage — exactly like Claude Code.</strong> Each plan has a flat price and a monthly usage cap; hit it and you upgrade to the next plan (or throttle until reset), never a surprise bill. ` +
+    `This account (<strong>${upa} seat${upa>1?'s':''}</strong>, <strong>${Math.round(creditsUsed).toLocaleString()}</strong> of <strong>${Math.round(cp.cap).toLocaleString()}</strong> credits = ${cp.capUsedPct.toFixed(0)}% of cap) sits on <strong class="b">${t.name}</strong> at <strong class="g">${fmt(cp.total)}</strong>/mo` +
+    (cp.over? ` — <strong style="color:#f87171">over the Max cap → Enterprise</strong>` : ``) +
+    `, <strong class="${contribMarginPct>=60?'g':''}">${contribMarginPct.toFixed(0)}% margin</strong>.`;
 
   document.getElementById('pricingNote').innerHTML = pricingMode==='credits'
-    ? `<strong class="b">Credits</strong>: customers buy a budget; each AI action burns credits priced from <em>our</em> API cost, so margin is built in (${structMargin.toFixed(0)}% on every credit). Tiers are bundles; heavy users pay overage. The word "token" never appears.`
+    ? `<strong class="b">Plans (Claude-Code style)</strong>: flat per-seat price + a monthly usage cap. No overage billing — exceed the cap and you upgrade. Caps are set from <em>our</em> API cost (1 credit = ${fmt(basis)}), so even a maxed-out plan stays profitable. The customer sees a simple price and a usage level, never tokens.`
     : `<strong class="b">Cost-plus</strong> at ${targetMargin}% sets price = cost ÷ (1−margin) — a <em>floor</em>, not a market price. ` +
       `Current: cost ${fmt(totalCost)} → ${fmt(costPlusSeat)}/seat. After payment fees, real contribution margin is <strong>${contribMarginPct.toFixed(0)}%</strong>, not ${targetMargin}%. Use this as your guardrail, then price above it.`;
 
@@ -1336,9 +1336,9 @@ function update(){
   // ---- Dynamic recommendations ----
   const recs = [];
   if (pricingMode === 'credits')
-    recs.push({lvl:'good', icon:'✓', html:`<strong>Credit pricing</strong> active — tiers + usage overage, with credits priced from <strong class="b">our actual API cost</strong>. Margin is structural (${structMargin.toFixed(0)}% per credit), customers see a budget not tokens, and heavy users pay their way. Recommended.`});
+    recs.push({lvl:'good', icon:'✓', html:`<strong>Claude-Code-style plans</strong> active — flat per-seat price + usage cap, <strong class="b">no overage</strong>. Caps set from our API cost, so even a maxed plan is profitable; customers get predictable bills and upgrade when they outgrow a plan. Recommended.`});
   else
-    recs.push({lvl:'warn', icon:'💡', html:`You're in <strong>cost-plus</strong> mode — that's a floor, not a price. Switch to <strong class="b">Credits</strong> to package it for customers (this account → ${fmt(cp.total)} on the ${cp.tier.name} plan).`});
+    recs.push({lvl:'warn', icon:'💡', html:`You're in <strong>cost-plus</strong> mode — that's a floor, not a price. Switch to <strong class="b">Plans</strong> to package it for customers (this account → ${fmt(cp.total)} on the ${cp.tier.name} plan).`});
 
   if (contribMarginPct < 50)
     recs.push({lvl:'crit', icon:'⚠', html:`Contribution margin <strong class="r">${contribMarginPct.toFixed(0)}%</strong> after fees — thin. Raise the platform fee or the $/1,000-cycles meter.`});
