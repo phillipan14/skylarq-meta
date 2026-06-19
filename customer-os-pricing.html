@@ -399,6 +399,17 @@
       <div class="sub">~7K in / 1.8K out per call (measured). Mature briefs 3–5K.</div>
     </div>
     <div class="param-row">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer" onclick="togglePromptCaching()">
+        <div class="toggle-switch on" id="cacheSwitch"><div class="toggle-knob"></div></div>
+        <span id="cacheLabel">Prompt caching: on — repeated context at 0.1×</span>
+      </label>
+      <div id="cacheRow" style="margin-top:8px">
+        <label>Cacheable share of brief input <span class="val" id="val-cachePct">75%</span></label>
+        <input type="range" id="cachePct" min="0" max="0.95" step="0.05" value="0.75" oninput="update()">
+        <div class="sub">An entity's context is re-read every cycle, so most input is cached. <strong style="color:#94a3b8">This is the lever that keeps heavy / enterprise briefs (10k+ emails) from blowing the margin.</strong></div>
+      </div>
+    </div>
+    <div class="param-row">
       <label>Force re-syncs / month <span class="val" id="val-forceRefreshesPerMonth">2</span></label>
       <input type="range" id="forceRefreshesPerMonth" min="0" max="50" value="2" oninput="update()">
     </div>
@@ -553,6 +564,7 @@
       <div class="section-label" style="margin-top:16px;margin-bottom:8px">What the customer sees — plans &amp; your margin</div>
       <div class="plan-grid" id="planGrid"></div>
       <div class="callout" id="overageNote" style="margin-top:10px"></div>
+      <div class="callout" id="heavyNote" style="margin-top:8px;border-color:#f59e0b40;background:#f59e0b0d"></div>
     </div>
 
     <div id="costplusControls" style="display:none">
@@ -611,6 +623,7 @@ let currentMode    = 'api';
 let pricingMode    = 'credits';
 let outboundOn     = false;
 let whisperHosted  = false;
+let promptCaching  = true;
 let refreshMode    = 'optimized';   // 'optimized' (Haiku check + signal-gated Sonnet) | 'naive' (full Sonnet every cycle)
 let sharedTools    = true;   // Instantly amortized across all accounts by default (agency workspace)
 let maxCosting     = 'allocated';  // 'allocated' (plan ÷ accounts onto COGS) | 'marginal' (plan = fixed cost, per-customer Claude ≈ $0)
@@ -700,6 +713,13 @@ function toggleWhisper(){
   document.getElementById('whisperPanel').style.display = whisperHosted?'block':'none';
   update();
 }
+function togglePromptCaching(){
+  promptCaching = !promptCaching;
+  document.getElementById('cacheSwitch').classList.toggle('on', promptCaching);
+  document.getElementById('cacheLabel').textContent = promptCaching?'Prompt caching: on — repeated context at 0.1×':'Prompt caching: off — every token full price';
+  document.getElementById('cacheRow').style.display = promptCaching?'block':'none';
+  update();
+}
 function toggleSharedTools(){
   sharedTools = !sharedTools;
   document.getElementById('sharedToolsSwitch').classList.toggle('on', sharedTools);
@@ -743,11 +763,15 @@ function computeCosts(p){
   //               of them escalate to a full Sonnet deep brief when there's real signal.
   const isOpt = (mode !== 'maxplan') && (refreshMode === 'optimized');
   const briefCallsPerMonth = active * Math.min(refreshMultiplier, 11) * DAYS;   // = research cycles/mo
-  const briefInputPerCall  = 820 + briefTokens + 8*200 + 8*375;
+  const briefInputPerCall  = 820 + briefTokens + 8*200 + 8*375 + (p.extraCtx||0);  // extraCtx = heavy history pulled in (input only)
   const briefOutputPerCall = Math.max(briefTokens + 300, 1800);
-  const sonnetBriefUnit = briefInputPerCall/1e6*pSonnetIn + briefOutputPerCall/1e6*pSonnetOut;
+  // Prompt caching: an entity's context is re-read every cycle, so `cachePct` of brief/check INPUT
+  // is cached and read at 0.1× price. cacheFactor scales the input cost (output never caches).
+  const cachePct  = p.promptCaching ? Math.max(0, Math.min(1, p.cachePct ?? 0.75)) : 0;
+  const cacheFactor = 1 - 0.9*cachePct;
+  const sonnetBriefUnit = briefInputPerCall/1e6*pSonnetIn*cacheFactor + briefOutputPerCall/1e6*pSonnetOut;
   const checkTin = 400, checkTout = 80;                                         // Haiku change-check
-  const checkUnit = checkTin/1e6*pHaikuIn + checkTout/1e6*pHaikuOut;
+  const checkUnit = checkTin/1e6*pHaikuIn*cacheFactor + checkTout/1e6*pHaikuOut;
   const sr = (refreshMode === 'optimized') ? Math.max(0, Math.min(1, signalRate)) : 1;
   const deepBriefs = (refreshMode === 'optimized') ? briefCallsPerMonth * sr : briefCallsPerMonth;
   const checks     = (refreshMode === 'optimized') ? briefCallsPerMonth : 0;
@@ -881,6 +905,7 @@ function readParams(){
     maxPlanCeiling: isMax ? getNum('maxPlanCeiling') : 10,
     mode: currentMode,
     refreshMode, signalRate: getNum('signalRate'),
+    promptCaching, cachePct: getNum('cachePct'),
     prices: {
       pSonnetIn: getNum('pSonnetIn'), pSonnetOut: getNum('pSonnetOut'),
       pHaikuIn: getNum('pHaikuIn'),   pHaikuOut: getNum('pHaikuOut'),
@@ -1021,6 +1046,7 @@ function update(){
   if(outboundOn) document.getElementById('val-outboundProspects').textContent = getInt('outboundProspects').toLocaleString();
   document.getElementById('val-refreshMultiplier').textContent     = p.refreshMultiplier.toFixed(1);
   document.getElementById('val-signalRate').textContent            = Math.round(getNum('signalRate')*100)+'%';
+  document.getElementById('val-cachePct').textContent              = Math.round(getNum('cachePct')*100)+'%';
   document.getElementById('val-briefTokens').textContent           = p.briefTokens.toLocaleString();
   document.getElementById('val-forceRefreshesPerMonth').textContent= p.forceRefreshesPerMonth;
 
@@ -1321,6 +1347,21 @@ function update(){
     `This account (<strong>${upa} seat${upa>1?'s':''}</strong>, <strong>${Math.round(creditsUsed).toLocaleString()}</strong> of <strong>${Math.round(cp.cap).toLocaleString()}</strong> credits = ${cp.capUsedPct.toFixed(0)}% of cap) sits on <strong class="b">${t.name}</strong> at <strong class="g">${fmt(cp.total)}</strong>/mo` +
     (cp.over? ` — <strong style="color:#f87171">over the Max cap → Enterprise</strong>` : ``) +
     `, <strong class="${contribMarginPct>=60?'g':''}">${contribMarginPct.toFixed(0)}% margin</strong>.`;
+
+  // ---- Heavy-context stress (Mudit's concern #2): one brief with ~10k-email enterprise context ----
+  const EXTRA_CTX = 40000;  // ~10k+ emails/Slacks of history pulled into the brief INPUT (not output)
+  const heavyP   = {...p, extraCtx:EXTRA_CTX};
+  const heavyC   = computeCosts(heavyP);
+  const heavyCr  = accountCredits(heavyC);
+  const heavyCP  = creditPrice(heavyCr, upa);
+  const heavyCost= costNum(heavyC, ctx);
+  const heavyMargin = heavyCP.total>0 ? (1-heavyCost/heavyCP.total)*100 : 0;
+  // same account with caching forced OFF, to show the lever's effect
+  const heavyNoCacheC = computeCosts({...heavyP, promptCaching:false});
+  const heavyNoCacheCost = costNum(heavyNoCacheC, ctx);
+  document.getElementById('heavyNote').innerHTML =
+    `<strong style="color:#f59e0b">Heavy-context stress (enterprise, ~10k+ emails/brief):</strong> this account's briefs balloon to <strong>${Math.round(heavyCr).toLocaleString()} credits/mo</strong> → lands on <strong class="b">${heavyCP.tier.name}${heavyCP.over?' (over Max → Enterprise)':''}</strong> at ${fmt(heavyCP.total)}/mo, cost ${fmt(heavyCost)} → <strong class="${heavyMargin>=50?'g':'r'}">${heavyMargin.toFixed(0)}% margin</strong>. ` +
+    `The cap still caps our cost — bigger briefs just push them up a plan. <strong>Caching does the heavy lifting:</strong> without it this same account would cost ${fmt(heavyNoCacheCost)} (${promptCaching?'caching on now':'turn caching on'}).`;
 
   document.getElementById('pricingNote').innerHTML = pricingMode==='credits'
     ? `<strong class="b">Plans (Claude-Code style)</strong>: flat per-seat price + a monthly usage cap. No overage billing — exceed the cap and you upgrade. Caps are set from <em>our</em> API cost (1 credit = ${fmt(basis)}), so even a maxed-out plan stays profitable. The customer sees a simple price and a usage level, never tokens.`
