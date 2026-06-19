@@ -451,7 +451,7 @@
   <div class="verdict">
     <div class="verdict-head">▶ What we should do <span class="badge">the recommendation</span></div>
     <ol>
-      <li><strong>Flat per-seat plans with a usage cap — no overage (like Claude Code):</strong> Starter <strong class="b" id="v-base">$49/seat</strong> covers up to <span id="v-incl">2,000</span> credits/seat; hit the cap and you upgrade to Pro/Max, never a surprise bill. Caps are set from <em>our actual API cost</em>, so even a maxed plan stays profitable and tokens are never exposed.</li>
+      <li><strong>Flat per-seat plans, capped by companies tracked — no overage (like Claude Code):</strong> Starter <strong class="b" id="v-base">$49/seat</strong> actively tracks up to <span id="v-incl">~20</span> companies/seat; hit the limit and you upgrade to Pro/Max, never a surprise bill. The customer's unit is <em>companies they choose to track</em> (intuitive + controllable) — "briefs"/"credits"/"tokens" are internal only. Caps are set from our real API cost, so even a maxed plan stays profitable.</li>
       <li><strong>Run the optimized refresh engine</strong> — a cheap Haiku "did anything change?" check on every research cycle, full Sonnet brief only on the ~30% that show real signal. This is the single biggest margin lever: it cuts the dominant cost ~40% with no quality loss.</li>
       <li><strong>Default infra = pay-as-you-go Claude API.</strong> The Max Plan is an internal margin lever only (Anthropic ToS risk) — and it only beats the API at the <strong>margin</strong> (plan already paid) or once you have enough accounts to fill a $200 plan.</li>
       <li><strong>Meter on "research cycles," not "active companies"</strong> — cycles are countable and auditable; "active" is fuzzy and arguable at renewal.</li>
@@ -562,6 +562,7 @@
       </div>
 
       <div class="section-label" style="margin-top:16px;margin-bottom:8px">What the customer sees — plans &amp; your margin</div>
+      <div class="sub" style="margin-bottom:8px">Customer-facing unit = <strong style="color:#a5b4fc">companies actively tracked</strong> (intuitive + they control it). "Briefs / credits / tokens" stay internal — shown in grey on each card.</div>
       <div class="plan-grid" id="planGrid"></div>
       <div class="callout" id="overageNote" style="margin-top:10px"></div>
       <div class="callout" id="heavyNote" style="margin-top:8px;border-color:#f59e0b40;background:#f59e0b0d"></div>
@@ -1012,14 +1013,15 @@ function renderPlans(p, ctx){
     const maxedCostPerSeat=t.capPerSeat*basisL;
     const maxedMargin=t.perSeat>0?(1-maxedCostPerSeat/t.perSeat)*100:0;
     const mxcls=maxedMargin>=50?'g':maxedMargin>=30?'y':'r';
-    const deepBriefCr=Math.max(1,Math.round(tc.actionUnits.deepBrief/Math.max(1e-9,basisL)));
-    const briefsCap=Math.round(t.capPerSeat/deepBriefCr);
+    // Translate the internal credit cap into the CUSTOMER-FACING unit: companies actively tracked.
+    // (A "brief" is internal jargon — customers think in companies/deals they track and control.)
+    const companiesCap = credits>0 ? Math.round(rep.deals * t.capPerSeat / credits) : 0;
     return `<div class="plan-card ${i===2?'feature':''}">
       <div class="plan-cname">${t.name}</div>
       <div class="plan-cprice">${fmt(t.perSeat)}<span>/seat/mo</span></div>
-      <div class="plan-cincl">Up to <strong>${t.capPerSeat.toLocaleString()} credits / seat</strong><br><span style="color:#64748b">≈ ${briefsCap.toLocaleString()} deep briefs/seat · no overage</span></div>
-      <div class="plan-cbeyond">hit the cap → upgrade plan</div>
-      <div class="plan-cmargin">e.g. ${rep.seats} seat${rep.seats>1?'s':''}/${rep.deals} deals → pays <b>${fmt(price)}</b>, cost ${fmt(cost)} → <b class="${mcls}">${margin.toFixed(0)}%</b><br><span style="color:#475569">if seat maxes cap → </span><b class="${mxcls}">${maxedMargin.toFixed(0)}% floor</b></div>
+      <div class="plan-cincl">Actively track up to <strong>~${companiesCap.toLocaleString()} companies</strong>/seat<br><span style="color:#64748b">AI keeps each one researched &amp; up to date · no overage</span></div>
+      <div class="plan-cbeyond">hit your limit → upgrade plan</div>
+      <div class="plan-cmargin"><span style="color:#475569">internal:</span> ${rep.seats} seat${rep.seats>1?'s':''}/${rep.deals} deals → pays <b>${fmt(price)}</b>, cost ${fmt(cost)} → <b class="${mcls}">${margin.toFixed(0)}%</b> · max-cap floor <b class="${mxcls}">${maxedMargin.toFixed(0)}%</b><br><span style="color:#334155">≈ ${t.capPerSeat.toLocaleString()} credits/seat under the hood</span></div>
     </div>`;
   }).join('');
   html += `<div class="plan-card"><div class="plan-cname">Enterprise</div><div class="plan-cprice">Custom</div>
@@ -1173,8 +1175,9 @@ function update(){
   const marginWord = contribMarginPct>=70?'<strong class="g">strong</strong>':contribMarginPct>=50?'healthy':'<strong style="color:#f87171">thin</strong>';
   // keep the recommendation bullet (credit tiers) in sync with the actual inputs (safe to share)
   const t1=creditTiers()[0];
+  const starterCompanies = (creditsUsed>0 && p.activeCompanies>0) ? Math.round(t1.capPerSeat * p.activeCompanies / creditsUsed) : Math.round(t1.capPerSeat/100);
   const vb=document.getElementById('v-base'); if(vb) vb.textContent = fmt(t1.perSeat)+'/seat';
-  const vi=document.getElementById('v-incl'); if(vi) vi.textContent = t1.capPerSeat.toLocaleString();
+  const vi=document.getElementById('v-incl'); if(vi) vi.textContent = '~'+starterCompanies.toLocaleString();
   const motion = pricePerAcct<=149
     ? `<strong class="b">self-serve / volume play</strong> — keep CAC near-zero (no sales team), win on signups`
     : `<strong class="b">sales-led</strong> — higher price funds a sales motion, fewer accounts to $1M`;
