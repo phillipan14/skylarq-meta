@@ -160,6 +160,8 @@
   .verdict li strong.b { color: #a5b4fc; }
   .verdict-live { margin-top: 12px; padding-top: 12px; border-top: 1px solid #ffffff14; font-size: 12.5px; color: #e2e8f0; line-height: 1.6; }
   .verdict-live .chip { display: inline-block; font-family: var(--mono); font-variant-numeric: tabular-nums; background: #0f1320; border: 1px solid #2d3a5e; border-radius: 6px; padding: 1px 7px; color: #f1f5f9; margin: 0 2px; }
+  .preset { display: inline-block; cursor: pointer; background: #4f6ef718; border: 1px solid #4f6ef740; border-radius: 6px; padding: 2px 9px; color: #a5b4fc; margin: 0 3px; font-size: 11px; transition: background 0.12s; }
+  .preset:hover { background: #4f6ef733; color: #c7d2fe; }
 
   /* Collapsible playbook */
   details.playbook { background: #1a2030; border: 1px solid #1e2535; border-radius: 10px; margin-bottom: 18px; overflow: hidden; }
@@ -420,7 +422,7 @@
   <div class="verdict">
     <div class="verdict-head">▶ What we should do <span class="badge">the recommendation</span></div>
     <ol>
-      <li><strong>Price value-based, never flat per-seat:</strong> <strong class="b">$149/seat</strong> + 15 included active companies/seat + <strong class="b">$12</strong> per extra active company. Outbound is a separate add-on. This makes deal-heavy accounts (your highest-cost, highest-value users) pay for what they use.</li>
+      <li><strong>Price bottoms-up on usage, not seats or "active accounts":</strong> <strong class="b" id="v-base">$49/mo</strong> platform fee + <strong class="b" id="v-over">$80</strong> per <span id="v-incl">1,000</span> research cycles (refreshes). You bill the actual AI work — countable and auditable — so light users land near the platform fee and heavy pipelines scale proportionally. Outbound is a separate add-on.</li>
       <li><strong>Run the optimized refresh engine</strong> — a cheap Haiku "did anything change?" check on every research cycle, full Sonnet brief only on the ~30% that show real signal. This is the single biggest margin lever: it cuts the dominant cost ~40% with no quality loss.</li>
       <li><strong>Default infra = pay-as-you-go Claude API.</strong> The Max Plan is an internal margin lever only (Anthropic ToS risk) — and it only beats the API at the <strong>margin</strong> (plan already paid) or once you have enough accounts to fill a $200 plan.</li>
       <li><strong>Meter on "research cycles," not "active companies"</strong> — cycles are countable and auditable; "active" is fuzzy and arguable at renewal.</li>
@@ -505,9 +507,24 @@
   <!-- PRICING -->
   <div class="pricing-section">
     <h3>Pricing model</h3>
-    <div class="mode-toggle" style="max-width:420px;margin-bottom:16px">
-      <button class="mode-btn active" onclick="setPricing('value',this)">Value-based (recommended)</button>
+    <div class="mode-toggle" style="max-width:560px;margin-bottom:16px">
+      <button class="mode-btn active" onclick="setPricing('usage',this)">Usage / bottoms-up (recommended)</button>
+      <button class="mode-btn" onclick="setPricing('value',this)">Value (per-seat)</button>
       <button class="mode-btn" onclick="setPricing('costplus',this)">Cost-plus (floor)</button>
+    </div>
+
+    <div id="usageControls">
+      <div class="value-inputs">
+        <div><label>Platform fee $ / mo</label><input type="number" id="usageBase" value="49" oninput="update()"></div>
+        <div><label>Included research cycles / mo</label><input type="number" id="usageIncluded" value="500" oninput="update()"></div>
+        <div><label>$ / 1,000 cycles beyond</label><input type="number" id="usagePerK" value="80" oninput="update()"></div>
+        <div><label>Outbound add-on $/acct</label><input type="number" id="outboundAddonU" value="249" oninput="update()" disabled style="opacity:.5"></div>
+      </div>
+      <div class="sub" style="margin-top:9px">Metered on <strong style="color:#a5b4fc">research cycles (refreshes)</strong> — the actual AI work, counted bottoms-up, not the fuzzy "active companies." A typical light account runs a few hundred cycles/mo; heavy pipelines run thousands and pay proportionally.
+        <span class="preset" onclick="setUsage(49,500,80)">Lean ($49 + $80/1k)</span>
+        <span class="preset" onclick="setUsage(99,1000,60)">Standard ($99 + $60/1k)</span>
+        <span class="preset" onclick="setUsage(0,0,120)">Pure usage ($120/1k, no base)</span>
+      </div>
     </div>
 
     <div id="costplusControls" style="display:none">
@@ -520,10 +537,16 @@
 
     <div id="valueControls">
       <div class="value-inputs">
-        <div><label>Base $ / seat / mo</label><input type="number" id="baseSeat" value="149" oninput="update()"></div>
+        <div><label>Base $ / seat / mo</label><input type="number" id="baseSeat" value="99" oninput="update()"></div>
         <div><label>Included active / seat</label><input type="number" id="includedActive" value="15" oninput="update()"></div>
         <div><label>$ / extra active company</label><input type="number" id="overageRate" value="12" oninput="update()"></div>
         <div><label>Outbound add-on $/acct</label><input type="number" id="outboundAddon" value="249" oninput="update()"></div>
+      </div>
+      <div class="sub" style="margin-top:9px">Quick-start base price:
+        <span class="preset" onclick="setBase(50)">$50</span>
+        <span class="preset" onclick="setBase(99)">$99 · recommended</span>
+        <span class="preset" onclick="setBase(149)">$149</span>
+        <span style="color:#475569"> — $50–99 = self-serve volume play; $149+ = sales-led. Heavy users auto-scale via the meter regardless.</span>
       </div>
     </div>
 
@@ -565,7 +588,7 @@
 
 <script>
 let currentMode    = 'api';
-let pricingMode    = 'value';
+let pricingMode    = 'usage';
 let outboundOn     = false;
 let whisperHosted  = false;
 let refreshMode    = 'optimized';   // 'optimized' (Haiku check + signal-gated Sonnet) | 'naive' (full Sonnet every cycle)
@@ -610,6 +633,7 @@ function setPricing(mode, btn){
   pricingMode = mode;
   btn.parentElement.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
+  document.getElementById('usageControls').style.display    = mode==='usage'?'block':'none';
   document.getElementById('costplusControls').style.display = mode==='costplus'?'block':'none';
   document.getElementById('valueControls').style.display    = mode==='value'?'block':'none';
   update();
@@ -618,6 +642,13 @@ function setMaxCosting(m, btn){
   maxCosting = m;
   btn.parentElement.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
+  update();
+}
+function setBase(v){ document.getElementById('baseSeat').value = v; update(); }
+function setUsage(base, included, perK){
+  document.getElementById('usageBase').value = base;
+  document.getElementById('usageIncluded').value = included;
+  document.getElementById('usagePerK').value = perK;
   update();
 }
 function setActivity(key, el){
@@ -863,6 +894,18 @@ function costNum(c, ctx){
   return c.totalAI + maxPlanPerAcct + (ctx.toolsPerAcct||0) + ctx.infra + storagePerAcct + ctx.supportCost;
 }
 
+// Usage-based (bottoms-up) price — meter on actual AI work, NOT the fuzzy "active companies".
+// billable AI actions/mo = research cycles (refreshes) + Slack syncs + meetings + outbound drafts.
+// price = flat platform fee + $ per 1,000 actions beyond an included allotment + outbound add-on.
+function usagePrice(actionsPerMonth){
+  const base      = getNum('usageBase');
+  const included  = getNum('usageIncluded');
+  const perK      = getNum('usagePerK');
+  const overage   = Math.max(0, actionsPerMonth - included) / 1000 * perK;
+  const addon     = outboundOn ? getNum('outboundAddon') : 0;
+  return base + overage + addon;
+}
+
 // Value-based price for an account given its active companies + seats.
 // Included active companies scale PER SEAT (fairer to multi-seat teams; protects the deal-heavy tail).
 function valuePrice(activeCompanies, seats){
@@ -949,7 +992,10 @@ function update(){
   const costPlusSeat   = (totalCost/upa)/(1 - targetMargin/100);
   const costPlusAcct   = costPlusSeat * upa;
   const valueAcct      = valuePrice(p.activeCompanies, upa);
-  const pricePerAcct   = pricingMode==='value' ? valueAcct : costPlusAcct;
+  const cyclesPerMonth = c.briefCallsPerMonth;            // research cycles (refreshes) — the bottoms-up meter
+  const usageAcct      = usagePrice(cyclesPerMonth);
+  const pricePerAcct   = pricingMode==='usage' ? usageAcct
+                       : pricingMode==='value' ? valueAcct : costPlusAcct;
 
   // ---- Revenue & contribution (real margin after fees) ----
   const grossRev   = pricePerAcct * payingAccounts;
@@ -966,8 +1012,11 @@ function update(){
   document.getElementById('totalCost').textContent = fmt(totalCost);
   document.getElementById('totalCostSub').textContent = `AI ${fmt(c.totalAI)} + tools ${fmt(toolsPerAcct+maxPlanPerAcct)} + infra ${fmt(infra)} + storage ${fmt(storagePerAcct)}`;
   document.getElementById('recPrice').textContent = fmt(pricePerAcct);
-  document.getElementById('recPriceSub').textContent = pricingMode==='value'
-    ? `${fmt(getNum('baseSeat'))}/seat × ${upa} + meter` : `${fmt(costPlusSeat)}/seat × ${upa} (cost-plus ${targetMargin}%)`;
+  document.getElementById('recPriceSub').textContent = pricingMode==='usage'
+    ? `${fmt(getNum('usageBase'))} base + ${Math.round(cyclesPerMonth).toLocaleString()} cycles/mo metered`
+    : pricingMode==='value'
+    ? `${fmt(getNum('baseSeat'))}/seat × ${upa} + meter`
+    : `${fmt(costPlusSeat)}/seat × ${upa} (cost-plus ${targetMargin}%)`;
   const cm=document.getElementById('contribMargin');
   cm.textContent = contribMarginPct.toFixed(0)+'%';
   cm.className = 'card-value ' + (contribMarginPct>=60?'green':contribMarginPct>=35?'yellow':'red');
@@ -1002,9 +1051,11 @@ function update(){
   const engineVerdict = refreshMode==='optimized'
     ? `Engine <strong class="g">Optimized ✓</strong>`
     : `Engine <strong style="color:#facc15">Naive</strong> — switch to Optimized to cut ~40%`;
-  const priceVerdict = pricingMode==='value'
-    ? `Pricing <strong class="g">Value ✓</strong>`
-    : `Pricing <strong style="color:#facc15">Cost-plus</strong> — that's a floor, switch to Value`;
+  const priceVerdict = pricingMode==='usage'
+    ? `Pricing <strong class="g">Usage ✓</strong> (bottoms-up on cycles)`
+    : pricingMode==='value'
+    ? `Pricing <strong class="b">Value</strong> (per-seat)`
+    : `Pricing <strong style="color:#facc15">Cost-plus</strong> — that's a floor`;
   let infraVerdict;
   if(!isMax) infraVerdict = `Infra <strong class="g">Claude API ✓</strong> (honest default)`;
   else if(isMarginal) infraVerdict = `Infra <strong class="b">Max Plan, marginal</strong> — saves ${fmt(maxDelta)}/acct (plan ${fmt(planFixedTotal)}/mo fixed); <strong style="color:#facc15">ToS risk</strong>`;
@@ -1012,9 +1063,17 @@ function update(){
       ? `Infra <strong class="b">Max Plan</strong> — saves ${fmt(maxDelta)}/acct; <strong style="color:#facc15">ToS risk</strong>`
       : `Infra <strong style="color:#f87171">Max Plan underfilled</strong> (+${fmt(-maxDelta)}/acct vs API) — add accounts or use API`;
   const marginWord = contribMarginPct>=70?'<strong class="g">strong</strong>':contribMarginPct>=50?'healthy':'<strong style="color:#f87171">thin</strong>';
+  // keep the recommendation bullet (usage meter) in sync with the actual usage inputs (safe to share)
+  const vb=document.getElementById('v-base'); if(vb) vb.textContent = fmt(getNum('usageBase'))+'/mo';
+  const vi=document.getElementById('v-incl'); if(vi) vi.textContent = '1,000';
+  const vo=document.getElementById('v-over'); if(vo) vo.textContent = fmt(getNum('usagePerK'));
+  const motion = pricePerAcct<=149
+    ? `<strong class="b">self-serve / volume play</strong> — keep CAC near-zero (no sales team), win on signups`
+    : `<strong class="b">sales-led</strong> — higher price funds a sales motion, fewer accounts to $1M`;
   document.getElementById('verdictLive').innerHTML =
     `<strong>Right now:</strong> serving one account costs ${chip(fmt(totalCost))}, you charge ${chip(fmt(pricePerAcct))} → ${chip(contribMarginPct.toFixed(0)+'%')} contribution margin (${marginWord}), reaching $1M ARR at ${chip(isFinite(acctsTo1M)?acctsTo1M.toLocaleString():'—')} accounts. ` +
-    `&nbsp;·&nbsp; ${infraVerdict} &nbsp;·&nbsp; ${engineVerdict} &nbsp;·&nbsp; ${priceVerdict}.`;
+    `&nbsp;·&nbsp; ${infraVerdict} &nbsp;·&nbsp; ${engineVerdict} &nbsp;·&nbsp; ${priceVerdict}.` +
+    `<br><span style="color:#94a3b8">At ${fmt(pricePerAcct)}/acct this is a ${motion}.</span>`;
 
   document.getElementById('insightBar').innerHTML =
     `Biggest cost: <strong>${top.label}</strong> (${topPct}%)` +
@@ -1081,7 +1140,10 @@ function update(){
     const cc=computeCosts({...p,activeCompanies:ac});
     return costNum(cc, ctx);
   });
-  const lineRev=acRange.map((ac,i)=> pricingMode==='value' ? valuePrice(ac,upa) : (lineCost[i]/upa)/(1-targetMargin/100)*upa);
+  const cyclesFor = ac => ac * Math.min(p.refreshMultiplier,11) * 30;
+  const lineRev=acRange.map((ac,i)=> pricingMode==='usage' ? usagePrice(cyclesFor(ac))
+                                   : pricingMode==='value' ? valuePrice(ac,upa)
+                                   : (lineCost[i]/upa)/(1-targetMargin/100)*upa);
   if(lineChart){
     lineChart.data.labels=acRange;
     lineChart.data.datasets[0].data=lineCost;
@@ -1140,7 +1202,9 @@ function update(){
     const upa2=Math.max(1,td.usersPerAccount);
     const floor=(tCost/upa2)/(1-targetMargin/100)*upa2;
     const valueP=valuePrice(td.activeCompanies, upa2);
-    const shownPrice = pricingMode==='value' ? valueP : floor;
+    const tierCycles=tc.briefCallsPerMonth;
+    const usageP=usagePrice(tierCycles);
+    const shownPrice = pricingMode==='usage' ? usageP : pricingMode==='value' ? valueP : floor;
     const realMargin = shownPrice>0 ? (1 - tCost/shownPrice)*100 : 0;
     const cls = realMargin>=65?'good':realMargin>=40?'ok':'tight';
     const hi  = p.activeCompanies>=td.activeCompanies*0.6 && p.activeCompanies<=td.activeCompanies*1.6;
@@ -1148,15 +1212,19 @@ function update(){
       <div class="tier-name">${td.name}</div>
       <div class="tier-price">${fmt(shownPrice)}<span style="font-size:11px;font-weight:400;color:#475569">/acct</span></div>
       <div class="tier-floor">cost ${fmt(tCost)} · floor ${fmt(floor)}</div>
-      <div class="tier-detail">${td.companies} cos · ${td.activeCompanies} active · ${upa2} seat${upa2>1?'s':''}</div>
+      <div class="tier-detail">${Math.round(tierCycles).toLocaleString()} cycles/mo · ${td.activeCompanies} active · ${upa2} seat${upa2>1?'s':''}</div>
       <div class="tier-margin ${cls}">${realMargin.toFixed(0)}% margin</div>
     </div>`;
   }).join('');
 
-  document.getElementById('pricingNote').innerHTML = pricingMode==='value'
-    ? `<strong class="b">Value-based</strong> = ${fmt(getNum('baseSeat'))}/seat base + ${fmt(getNum('overageRate'))}/active-company over ${getNum('includedActive')} included <em>per seat</em>${outboundOn?` + ${fmt(getNum('outboundAddon'))} outbound add-on`:''}. ` +
+  document.getElementById('pricingNote').innerHTML = pricingMode==='usage'
+    ? `<strong class="b">Usage / bottoms-up</strong> = ${fmt(getNum('usageBase'))}/mo platform fee + ${fmt(getNum('usagePerK'))} per 1,000 research cycles (refreshes) over ${getNum('usageIncluded').toLocaleString()} included${outboundOn?` + ${fmt(getNum('outboundAddon'))} outbound add-on`:''}. ` +
+      `This account runs <strong class="b">${Math.round(cyclesPerMonth).toLocaleString()} cycles/mo</strong>: cost ${fmt(totalCost)} → price <strong class="g">${fmt(pricePerAcct)}</strong> → <strong class="${contribMarginPct>=60?'g':''}">${contribMarginPct.toFixed(0)}% contribution margin</strong>. ` +
+      `You bill the <strong class="b">actual AI work</strong>, counted — not the fuzzy "active companies." Self-serve-friendly: a customer's bill scales with how hard they use it.`
+    : pricingMode==='value'
+    ? `<strong class="b">Value (per-seat)</strong> = ${fmt(getNum('baseSeat'))}/seat base + ${fmt(getNum('overageRate'))}/active-company over ${getNum('includedActive')} included <em>per seat</em>${outboundOn?` + ${fmt(getNum('outboundAddon'))} outbound add-on`:''}. ` +
       `Current account: cost ${fmt(totalCost)} → price <strong class="g">${fmt(pricePerAcct)}</strong> → <strong class="${contribMarginPct>=60?'g':''}">${contribMarginPct.toFixed(0)}% contribution margin</strong>. ` +
-      `Meter on <strong class="b">active companies</strong> — it tracks both cost and value. Outbound priced as a separate add-on so its flat tools never distort the seat.`
+      `Predictable for buyers who want a flat seat — but "active companies" is fuzzier than metered cycles.`
     : `<strong class="b">Cost-plus</strong> at ${targetMargin}% sets price = cost ÷ (1−margin) — a <em>floor</em>, not a market price. ` +
       `Current: cost ${fmt(totalCost)} → ${fmt(costPlusSeat)}/seat. After payment fees, real contribution margin is <strong>${contribMarginPct.toFixed(0)}%</strong>, not ${targetMargin}%. Use this as your guardrail, then price on value above it.`;
 
@@ -1164,17 +1232,19 @@ function update(){
   const top2 = sens.slice(-2).reverse();
   document.getElementById('tornadoCallout').innerHTML =
     `<strong>What moves cost:</strong> ${top2.map(s=>s.label).join(' and ')} dominate — together they swing cost/account more than everything else combined. ` +
-    `Meter your price on <strong>active companies</strong> (the top lever and the clearest value signal); use <strong>refresh cadence</strong> as the margin throttle, tiered per plan.`;
+    `Both roll up into <strong>research cycles</strong> — so meter your price there (countable, auditable), and use <strong>refresh cadence</strong> as the margin throttle, tiered per plan.`;
 
   // ---- Dynamic recommendations ----
   const recs = [];
-  if (pricingMode === 'costplus')
-    recs.push({lvl:'warn', icon:'💡', html:`You're in <strong>cost-plus</strong> mode — that's a floor, not a price. Switch to <strong class="b">value-based</strong> to price on worth (${fmt(valueAcct)}/acct vs ${fmt(costPlusAcct)} floor).`});
+  if (pricingMode === 'usage')
+    recs.push({lvl:'good', icon:'✓', html:`<strong>Usage / bottoms-up pricing</strong> active — metered on <strong class="b">research cycles</strong> (the real AI work), not "active companies." This is the recommended model: self-serve-friendly, auditable, and bills scale with usage.`});
+  else if (pricingMode === 'costplus')
+    recs.push({lvl:'warn', icon:'💡', html:`You're in <strong>cost-plus</strong> mode — that's a floor, not a price. Switch to <strong class="b">usage</strong> to price on the actual AI work (${fmt(usageAcct)}/acct vs ${fmt(costPlusAcct)} floor).`});
   else
-    recs.push({lvl:'good', icon:'✓', html:`<strong>Value-based pricing</strong> active. Falling model prices flow to <strong class="g">margin</strong>, not price cuts — the right posture.`});
+    recs.push({lvl:'warn', icon:'•', html:`<strong>Value (per-seat)</strong> active — predictable, but "active companies" is fuzzier than metered cycles. <strong class="b">Usage</strong> mode (${fmt(usageAcct)}/acct) bills the real work.`});
 
   if (contribMarginPct < 50)
-    recs.push({lvl:'crit', icon:'⚠', html:`Contribution margin <strong class="r">${contribMarginPct.toFixed(0)}%</strong> after fees — thin. Raise the base seat or the $/active-company meter.`});
+    recs.push({lvl:'crit', icon:'⚠', html:`Contribution margin <strong class="r">${contribMarginPct.toFixed(0)}%</strong> after fees — thin. Raise the platform fee or the $/1,000-cycles meter.`});
   else if (contribMarginPct < 70)
     recs.push({lvl:'warn', icon:'•', html:`Contribution margin <strong>${contribMarginPct.toFixed(0)}%</strong> — healthy, with room. The active-company meter rate is the lever.`});
   else
@@ -1208,8 +1278,9 @@ function checkGate(){
 
 // init
 syncActive();
+document.getElementById('usageControls').style.display    = 'block';
 document.getElementById('costplusControls').style.display = 'none';
-document.getElementById('valueControls').style.display    = 'block';
+document.getElementById('valueControls').style.display    = 'none';
 update();
 </script>
 </body>
